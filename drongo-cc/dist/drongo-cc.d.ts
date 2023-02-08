@@ -68,6 +68,10 @@ declare module 'drongo-cc' {
     export { ILoadingData } from "drongo-cc/gui/loadingView/ILoadingData";
     export { ILoadingView } from "drongo-cc/gui/loadingView/ILoadingView";
     export { LoadingView } from "drongo-cc/gui/loadingView/LoadingView";
+    export { IService } from "drongo-cc/services/IService";
+    export { BaseService } from "drongo-cc/services/BaseService";
+    export { ServiceStarter } from "drongo-cc/services/ServiceStarter";
+    export { ServiceManager, serviceManager } from "drongo-cc/services/ServiceManager";
 }
 
 declare module 'drongo-cc/utils/Injector' {
@@ -2259,5 +2263,101 @@ declare module 'drongo-cc/gui/loadingView/LoadingView' {
         static changeData(data: ILoadingData): void;
         static get impl(): ILoadingView;
     }
+}
+
+declare module 'drongo-cc/services/IService' {
+    /**
+        * 服务接口
+        */
+    export interface IService {
+            /**
+                * 名称
+                */
+            name: string;
+            /**
+                * 初始化
+                * @param callback
+                */
+            init(callback: (err: Error, result: IService) => void): void;
+            /**
+                * 销毁
+                */
+            destroy(): void;
+    }
+}
+
+declare module 'drongo-cc/services/BaseService' {
+    import { ResRef, ResURL } from "drongo-cc/drongo-cc";
+    import { IService } from "drongo-cc/services/IService";
+    /**
+        *  服务基类
+        *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
+        *  2.  重写$assetsLoaded函数，并在完成初始化后调用this.initComplete()
+        */
+    export class BaseService implements IService {
+            /**名称 */
+            name: string;
+            /**
+                * 依赖资源URL
+                */
+            protected $assets: Array<ResURL>;
+            /**
+                * 依赖资源引用
+                */
+            protected $assetRefs: Map<string, ResRef>;
+            protected __initCallback: (err: Error, result: IService) => void;
+            constructor();
+            init(callback: (err: Error, result: IService) => void): void;
+            /**
+                * 依赖资源加载完成
+                */
+            protected $assetsLoaded(): void;
+            /**
+                * 初始化完成时调用
+                */
+            protected $initComplete(): void;
+            destroy(): void;
+    }
+}
+
+declare module 'drongo-cc/services/ServiceStarter' {
+    import { IService } from "drongo-cc/services/IService";
+    export class ServiceStarter<T extends IService> {
+        constructor(name: string, serviceClass: {
+            new (): IService;
+        });
+        /**
+          * 启动
+          */
+        start(): Promise<T>;
+        destroy(): void;
+    }
+}
+
+declare module 'drongo-cc/services/ServiceManager' {
+    import { IService } from "drongo-cc/services/IService";
+    export class ServiceManager {
+            constructor();
+            /**
+                * 注册服务
+                * @param key
+                * @param value
+                */
+            register(key: string, value: {
+                    new (): IService;
+            }): void;
+            /**
+                * 获取服务
+                * @param key
+                * @returns
+                */
+            getService<T extends IService>(key: string): Promise<T>;
+            /**
+                * 卸载服务
+                * @param key
+                */
+            uninstall(key: string): void;
+    }
+    export var serviceManager: ServiceManager;
 }
 

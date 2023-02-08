@@ -92,3 +92,9 @@ export { RelationManager } from "./gui/relations/RelationManager"
 export { ILoadingData } from "./gui/loadingView/ILoadingData"
 export { ILoadingView } from "./gui/loadingView/ILoadingView"
 export { LoadingView } from "./gui/loadingView/LoadingView"
+
+//services
+export { IService } from "./services/IService"
+export { BaseService } from "./services/BaseService"
+export { ServiceStarter } from "./services/ServiceStarter"
+export { ServiceManager, serviceManager } from "./services/ServiceManager"

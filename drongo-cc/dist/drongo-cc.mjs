@@ -3577,8 +3577,6 @@ class Resource {
             this.content.decRef();
         }
         this.__refs.splice(index, 1);
-        //回收
-        // ResRef.pool.recycle(value);
         value.destroy();
     }
     destroy() {
@@ -3614,7 +3612,7 @@ class Resource {
     }
 }
 
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+var __awaiter$2 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -3641,7 +3639,7 @@ class Res {
      * @returns
      */
     static getResRef(url, refKey, progress) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter$2(this, void 0, void 0, function* () {
             if (Array.isArray(url)) {
                 throw new Error("获取资源列表请调用getResRefList或getResRefMap");
             }
@@ -3662,7 +3660,7 @@ class Res {
      * @returns
      */
     static getResRefList(urls, refKey, progress) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter$2(this, void 0, void 0, function* () {
             let tasks = [];
             let loaded = 0;
             for (let index = 0; index < urls.length; index++) {
@@ -3686,7 +3684,7 @@ class Res {
      * @returns
      */
     static getResRefMap(urls, refKey, result, progress) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter$2(this, void 0, void 0, function* () {
             result = result || new Map();
             let resRefs = yield this.getResRefList(urls, refKey, progress);
             for (let index = 0; index < resRefs.length; index++) {
@@ -3697,7 +3695,7 @@ class Res {
         });
     }
     static loadAsset(url, refKey, progress) {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter$2(this, void 0, void 0, function* () {
             //已加载完成
             const urlKey = url2Key(url);
             if (ResManager.hasRes(urlKey)) {
@@ -4580,4 +4578,156 @@ class LoadingView {
 }
 LoadingView.KEY = "drongo.LoadingView";
 
-export { AudioChannel, AudioManager, BinderUtils, BindingUtils, BitFlag, Component, Debuger, Dictionary, Entity, Event, EventDispatcher, FSM, FindPosition, FunctionHook, GUIManager, GUIState, Group, Handler, Injector, LayerManager, List, LoadingView, LocalStorage, Matcher, MatcherAllOf, MatcherAnyOf, MatcherNoneOf, MaxRectBinPack, Pool, PropertyBinder, RGBA8888Texture, Rect, RelationManager, Res, ResManager, ResRef, Resource, StringUtils, System, TaskQueue, TaskSequence, TickerManager, Timer, World, fullURL, key2URL, url2Key };
+/**
+ *  服务基类
+ *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
+ *  2.  重写$assetsLoaded函数，并在完成初始化后调用this.initComplete()
+ */
+class BaseService {
+    constructor() {
+    }
+    init(callback) {
+        this.__initCallback = callback;
+        if (this.$assets && this.$assets.length <= 0) ;
+        else {
+            Res.getResRefMap(this.$assets, this.name).then(value => {
+                this.$assetRefs = value;
+                this.$assetsLoaded();
+            }, reason => {
+                throw new Error(this.name + "依赖资源加载出错：" + reason.toString());
+            });
+        }
+    }
+    /**
+     * 依赖资源加载完成
+     */
+    $assetsLoaded() {
+    }
+    /**
+     * 初始化完成时调用
+     */
+    $initComplete() {
+        if (this.__initCallback) {
+            this.__initCallback(null, this);
+            this.__initCallback = null;
+        }
+    }
+    destroy() {
+        this.name = undefined;
+        this.$assets = null;
+        if (this.$assetRefs) {
+            this.$assetRefs.forEach(ref => {
+                ref.dispose();
+            });
+            this.$assetRefs = null;
+        }
+        this.__initCallback = null;
+    }
+}
+
+var __awaiter$1 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+class ServiceStarter {
+    constructor(name, serviceClass) {
+        this.__name = name;
+        this.__serviceClass = serviceClass;
+    }
+    /**
+     * 启动
+     */
+    start() {
+        return __awaiter$1(this, void 0, void 0, function* () {
+            if (this.__result) {
+                return this.__result;
+            }
+            this.__result = new Promise((resolve, reject) => {
+                //创建服务
+                let service = new this.__serviceClass();
+                service.name = this.__name;
+                //初始化服务
+                service.init((err, result) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(result);
+                    }
+                });
+            });
+            return this.__result;
+        });
+    }
+    destroy() {
+        this.__name = undefined;
+        this.__serviceClass = undefined;
+        this.__result = undefined;
+    }
+}
+
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+class ServiceManager {
+    constructor() {
+        this.__registered = new Map();
+        this.__starters = new Map();
+    }
+    /**
+     * 注册服务
+     * @param key
+     * @param value
+     */
+    register(key, value) {
+        if (this.__registered.has(key)) {
+            throw new Error("重复注册服务：" + key);
+        }
+        this.__registered.set(key, value);
+    }
+    /**
+     * 获取服务
+     * @param key
+     * @returns
+     */
+    getService(key) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.__registered.has(key)) {
+                throw new Error("未注册服务：" + key);
+            }
+            //如果启动器存在
+            if (this.__starters.has(key)) {
+                return this.__starters.get(key).start();
+            }
+            let starter = new ServiceStarter(key, this.__registered.get(key));
+            this.__starters.set(key, starter);
+            return starter.start();
+        });
+    }
+    /**
+     * 卸载服务
+     * @param key
+     */
+    uninstall(key) {
+        if (!this.__starters.has(key)) {
+            return;
+        }
+        let starter = this.__starters.get(key);
+        starter.destroy();
+        this.__starters.delete(key);
+    }
+}
+var serviceManager = new ServiceManager();
+
+export { AudioChannel, AudioManager, BaseService, BinderUtils, BindingUtils, BitFlag, Component, Debuger, Dictionary, Entity, Event, EventDispatcher, FSM, FindPosition, FunctionHook, GUIManager, GUIState, Group, Handler, Injector, LayerManager, List, LoadingView, LocalStorage, Matcher, MatcherAllOf, MatcherAnyOf, MatcherNoneOf, MaxRectBinPack, Pool, PropertyBinder, RGBA8888Texture, Rect, RelationManager, Res, ResManager, ResRef, Resource, ServiceManager, ServiceStarter, StringUtils, System, TaskQueue, TaskSequence, TickerManager, Timer, World, fullURL, key2URL, serviceManager, url2Key };

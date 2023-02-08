@@ -23,10 +23,8 @@ export class GUIMediator extends BaseMediator implements IGUIMediator {
     /**创建UI完成回调*/
     private __createdCallBack: Function;
 
-    /**
-     * 子UI
-     */
-    protected $subMediators: Array<SubGUIMediator> = [];
+    /**子Mediator(用于代码拆分)*/
+    protected $subMediators: Array<SubGUIMediator>;
 
     constructor() {
         super();

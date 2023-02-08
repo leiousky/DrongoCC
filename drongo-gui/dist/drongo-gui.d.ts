@@ -134,6 +134,8 @@ declare module 'drongo-gui/gui/IGUIInfo' {
             comName: string;
             /**UI所属状态 */
             state: GUIState;
+            /**依赖的服务 */
+            services?: Array<string>;
     }
 }
 
@@ -317,9 +319,7 @@ declare module 'drongo-gui/gui/GUIMediator' {
             /**根节点 */
             viewComponent: GComponent | null;
             info: IGUIInfo | null;
-            /**
-                * 子UI
-                */
+            /**子Mediator(用于代码拆分)*/
             protected $subMediators: Array<SubGUIMediator>;
             constructor();
             /**

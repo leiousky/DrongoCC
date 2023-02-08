@@ -42,4 +42,7 @@ export interface IGUIInfo{
 
     /**UI所属状态 */
     state: GUIState;
+    
+    /**依赖的服务 */
+    services?:Array<string>;
 }

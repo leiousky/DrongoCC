@@ -1,4 +1,4 @@
-import { Resource, key2URL, url2Key, ResManager, BindingUtils, Timer, Res, LoadingView, GUIManager, Event, LayerManager, TickerManager, GUIState, RelationManager } from 'drongo-cc';
+import { Resource, key2URL, url2Key, ResManager, BindingUtils, Timer, Res, LoadingView, serviceManager, GUIManager, Event, LayerManager, TickerManager, GUIState, RelationManager } from 'drongo-cc';
 import { UIPackage, GComponent, GRoot, AsyncOperation, GGraph, RelationType } from 'drongo-fgui';
 import { assetManager, Color, Node } from 'cc';
 
@@ -314,6 +314,15 @@ class BaseMediator {
     }
 }
 
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var LoadState;
 (function (LoadState) {
     LoadState[LoadState["Null"] = 0] = "Null";
@@ -366,6 +375,28 @@ class GUIProxy {
         if (!this.__resRef) {
             throw new Error("加载UI资源失败:" + this.info.packageName + " ");
         }
+        //如果有依赖的服务
+        if (this.info.services) {
+            this.__initServices();
+        }
+        else {
+            this.__createUIMediator();
+        }
+    }
+    /**
+     * 初始化服务
+     */
+    __initServices() {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (let index = 0; index < this.info.services.length; index++) {
+                const serviceKey = this.info.services[index];
+                yield serviceManager.getService(serviceKey);
+            }
+            this.__createUIMediator();
+        });
+    }
+    /**创建Mediator */
+    __createUIMediator() {
         let viewCreatorCom = GUIProxy.createNode.addComponent(this.info.uiName + "Mediator");
         let viewCreator = viewCreatorCom;
         if (!viewCreator) {
@@ -373,7 +404,6 @@ class GUIProxy {
         }
         this.mediator = viewCreator.createMediator();
         //销毁
-        GUIProxy.createNode.removeComponent(viewCreatorCom);
         viewCreatorCom.destroy();
         this.__loadState = LoadState.Loaded;
         this.mediator.createUI(this.info, this.__createUICallBack.bind(this));
@@ -766,10 +796,6 @@ class GUIMediator extends BaseMediator {
         this.info = null;
         /**遮罩 */
         this.__mask = null;
-        /**
-         * 子UI
-         */
-        this.$subMediators = [];
     }
     /**
      * 创建UI

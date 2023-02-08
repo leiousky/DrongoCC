@@ -1,5 +1,5 @@
 import { Component, Node } from "cc";
-import { Event, GUIManager, IGUIMediator, ILayer, IViewCreator, LayerManager, LoadingView, Res, ResRef, ResURL, Timer, url2Key } from "drongo-cc";
+import { Event, GUIManager, IGUIMediator, ILayer, IViewCreator, LayerManager, LoadingView, Res, ResRef, ResURL, serviceManager, Timer, url2Key } from "drongo-cc";
 import { IGUIInfo } from "./IGUIInfo";
 
 
@@ -83,6 +83,27 @@ export class GUIProxy {
         if (!this.__resRef) {
             throw new Error("加载UI资源失败:" + this.info.packageName + " ");
         }
+        //如果有依赖的服务
+        if (this.info.services) {
+            this.__initServices();
+        } else {
+            this.__createUIMediator();
+        }
+    }
+
+    /**
+     * 初始化服务
+     */
+    private async __initServices(): Promise<void> {
+        for (let index = 0; index < this.info.services.length; index++) {
+            const serviceKey = this.info.services[index];
+            await serviceManager.getService(serviceKey);
+        }
+        this.__createUIMediator();
+    }
+
+    /**创建Mediator */
+    private __createUIMediator(): void {
         let viewCreatorCom: Component = GUIProxy.createNode.addComponent(this.info.uiName + "Mediator");
         let viewCreator: IViewCreator = <unknown>viewCreatorCom as IViewCreator;
         if (!viewCreator) {
@@ -92,7 +113,6 @@ export class GUIProxy {
         this.mediator = viewCreator.createMediator();
 
         //销毁
-        GUIProxy.createNode.removeComponent(viewCreatorCom);
         viewCreatorCom.destroy();
 
         this.__loadState = LoadState.Loaded;
