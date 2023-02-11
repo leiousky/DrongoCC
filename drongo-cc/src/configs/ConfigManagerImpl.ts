@@ -69,6 +69,8 @@ export class ConfigManagerImpl implements IConfigManager {
                     //解析
                     this.__parseConfig(sheet, buffer);
                     this.__loaded.set(sheet, true);
+                    //原始资源可以销毁了
+                    value.dispose();
                 }
                 if (callback) callback();
             }, reason => {

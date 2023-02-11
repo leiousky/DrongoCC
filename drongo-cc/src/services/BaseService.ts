@@ -2,24 +2,21 @@ import { ResURL } from "../res/ResURL";
 import { ResRef } from "../res/ResRef";
 import { Res } from "../res/Res";
 import { IService } from "./IService";
+import { ConfigManager } from "../drongo-cc";
 
 /**
  *  服务基类
  *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
- *  2.  重写$assetsLoaded函数，并在完成初始化后调用this.initComplete()
+ *  2.  重写$configsLoaded函数，并在完成初始化后调用this.initComplete()
  */
 export class BaseService implements IService {
 
     /**名称 */
     name: string;
     /**
-     * 依赖资源URL
+     * 依赖的配置表名称
      */
-    protected $assets: Array<ResURL>;
-    /**
-     * 依赖资源引用
-     */
-    protected $assetRefs: Map<string, ResRef>;
+    protected $configs: Array<string>;
 
     protected __initCallback: (err: Error, result: IService) => void;
 
@@ -29,23 +26,20 @@ export class BaseService implements IService {
 
     init(callback: (err: Error, result: IService) => void): void {
         this.__initCallback = callback;
-        if (this.$assets && this.$assets.length <= 0) {
-
+        if (this.$configs == null || this.$configs.length <= 0) {
+            this.$configsLoaded();
         } else {
-            Res.getResRefMap(this.$assets, this.name).then(value => {
-                this.$assetRefs = value;
-                this.$assetsLoaded();
-            }, reason => {
-                throw new Error(this.name + "依赖资源加载出错：" + reason.toString());
-            })
+            ConfigManager.load(this.$configs, (err: Error) => {
+                this.$configsLoaded();
+            });
         }
     }
 
     /**
-     * 依赖资源加载完成
+     * 依赖配置加载完成
      */
-    protected $assetsLoaded(): void {
-        
+    protected $configsLoaded(): void {
+
     }
 
     /**
@@ -60,13 +54,7 @@ export class BaseService implements IService {
 
     destroy(): void {
         this.name = undefined;
-        this.$assets = null;
-        if (this.$assetRefs) {
-            this.$assetRefs.forEach(ref => {
-                ref.dispose();
-            });
-            this.$assetRefs = null;
-        }
+        this.$configs = null;
         this.__initCallback = null;
     }
 }
