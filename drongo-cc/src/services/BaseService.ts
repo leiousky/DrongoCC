@@ -1,4 +1,6 @@
-import { Res, ResRef, ResURL } from "../drongo-cc";
+import { ResURL } from "../res/ResURL";
+import { ResRef } from "../res/ResRef";
+import { Res } from "../res/Res";
 import { IService } from "./IService";
 
 /**

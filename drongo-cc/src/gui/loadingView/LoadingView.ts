@@ -1,4 +1,4 @@
-import { Injector } from "../../drongo-cc";
+import { Injector } from "../../utils/Injector";
 import { ILoadingData } from "./ILoadingData";
 import { ILoadingView } from "./ILoadingView";
 

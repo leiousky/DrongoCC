@@ -1,5 +1,5 @@
 import { AudioSource, director, Node } from "cc";
-import { Res } from "../drongo-cc";
+import { Res } from "../res/Res";
 import { ResRef } from "../res/ResRef";
 import { ResURL, url2Key } from "../res/ResURL";
 import { IAudioChannel } from "./IAudioChannel";

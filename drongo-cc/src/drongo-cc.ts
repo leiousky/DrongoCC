@@ -8,6 +8,7 @@ export { StringUtils } from "./utils/StringUtils"
 export { MaxRectBinPack, FindPosition, Rect } from "./utils/MaxRectsBinPack"
 export { RGBA8888Texture } from "./utils/RGBA8888Texture"
 export { Handler } from "./utils/Handler"
+export { ByteArray } from "./utils/ByteArray"
 
 //events
 export { IEventDispatcher } from "./events/IEventDispatcher"
@@ -98,3 +99,9 @@ export { IService } from "./services/IService"
 export { BaseService } from "./services/BaseService"
 export { ServiceStarter } from "./services/ServiceStarter"
 export { ServiceManager, serviceManager } from "./services/ServiceManager"
+
+//Config
+export { IConfigAccessor } from "./configs/core/IConfigAccessor"
+export { IConfigManager } from "./configs/core/IConfigManager"
+export { BaseConfigAccessor } from "./configs/BaseConfigAccessor"
+export { ConfigManager } from "./configs/ConfigManager"

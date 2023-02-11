@@ -1,5 +1,5 @@
 import { Dictionary } from "../containers/Dictionary";
-import { MatcherAllOf } from "../drongo-cc";
+import { MatcherAllOf } from "../entitys/matchers/MatcherAllOf";
 import { BitFlag } from "../utils/BitFlag";
 import { Component } from "./Component";
 import { Group } from "./Group";

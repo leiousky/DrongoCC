@@ -12,6 +12,7 @@ declare module 'drongo-cc' {
     export { MaxRectBinPack, FindPosition, Rect } from "drongo-cc/utils/MaxRectsBinPack";
     export { RGBA8888Texture } from "drongo-cc/utils/RGBA8888Texture";
     export { Handler } from "drongo-cc/utils/Handler";
+    export { ByteArray } from "drongo-cc/utils/ByteArray";
     export { IEventDispatcher } from "drongo-cc/events/IEventDispatcher";
     export { Event } from "drongo-cc/events/Event";
     export { EventDispatcher } from "drongo-cc/events/EventDispatcher";
@@ -72,6 +73,10 @@ declare module 'drongo-cc' {
     export { BaseService } from "drongo-cc/services/BaseService";
     export { ServiceStarter } from "drongo-cc/services/ServiceStarter";
     export { ServiceManager, serviceManager } from "drongo-cc/services/ServiceManager";
+    export { IConfigAccessor } from "drongo-cc/configs/core/IConfigAccessor";
+    export { IConfigManager } from "drongo-cc/configs/core/IConfigManager";
+    export { BaseConfigAccessor } from "drongo-cc/configs/BaseConfigAccessor";
+    export { ConfigManager } from "drongo-cc/configs/ConfigManager";
 }
 
 declare module 'drongo-cc/utils/Injector' {
@@ -423,6 +428,372 @@ declare module 'drongo-cc/utils/Handler' {
         run(...args: any[]): void;
         equal(value: Handler): boolean;
         static create(caller: any, method: Function | null, once?: boolean): Handler;
+    }
+}
+
+declare module 'drongo-cc/utils/ByteArray' {
+    /**
+        * Endian 类中包含一些值，它们表示用于表示多字节数字的字节顺序。
+        * 字节顺序为 bigEndian（最高有效字节位于最前）或 littleEndian（最低有效字节位于最前）。
+        * @version Egret 2.4
+        * @platform Web,Native
+        * @language zh_CN
+        */
+    export class Endian {
+            /**
+                * 表示多字节数字的最低有效字节位于字节序列的最前面。
+                * 十六进制数字 0x12345678 包含 4 个字节（每个字节包含 2 个十六进制数字）。最高有效字节为 0x12。最低有效字节为 0x78。（对于等效的十进制数字 305419896，最高有效数字是 3，最低有效数字是 6）。
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            static LITTLE_ENDIAN: string;
+            /**
+                * 表示多字节数字的最高有效字节位于字节序列的最前面。
+                * 十六进制数字 0x12345678 包含 4 个字节（每个字节包含 2 个十六进制数字）。最高有效字节为 0x12。最低有效字节为 0x78。（对于等效的十进制数字 305419896，最高有效数字是 3，最低有效数字是 6）。
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            static BIG_ENDIAN: string;
+    }
+    export const enum EndianConst {
+            LITTLE_ENDIAN = 0,
+            BIG_ENDIAN = 1
+    }
+    /**
+        * ByteArray 类提供用于优化读取、写入以及处理二进制数据的方法和属性。
+        * 注意：ByteArray 类适用于需要在字节层访问数据的高级开发人员。
+        * @version Egret 2.4
+        * @platform Web,Native
+        * @includeExample egret/utils/ByteArray.ts
+        * @language zh_CN
+        */
+    export class ByteArray {
+            /**
+                * @private
+                */
+            protected bufferExtSize: number;
+            protected data: DataView;
+            protected _bytes: Uint8Array;
+            /**
+                * @private
+                */
+            protected _position: number;
+            /**
+                *
+                * 已经使用的字节偏移量
+                * @protected
+                * @type {number}
+                * @memberOf ByteArray
+                */
+            protected write_position: number;
+            /**
+                * 更改或读取数据的字节顺序；egret.EndianConst.BIG_ENDIAN 或 egret.EndianConst.LITTLE_ENDIAN。
+                * @default egret.EndianConst.BIG_ENDIAN
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            get endian(): string;
+            set endian(value: string);
+            protected $endian: EndianConst;
+            /**
+                * @version Egret 2.4
+                * @platform Web,Native
+                */
+            constructor(buffer?: ArrayBuffer | Uint8Array, bufferExtSize?: number);
+            reset(): void;
+            destroy(): void;
+            /**
+                * @deprecated
+                * @version Egret 2.4
+                * @platform Web,Native
+                */
+            setArrayBuffer(buffer: ArrayBuffer): void;
+            /**
+                * 可读的剩余字节数
+                *
+                * @returns
+                *
+                * @memberOf ByteArray
+                */
+            get readAvailable(): number;
+            get buffer(): ArrayBuffer;
+            get rawBuffer(): ArrayBuffer;
+            /**
+                * @private
+                */
+            set buffer(value: ArrayBuffer);
+            get bytes(): Uint8Array;
+            /**
+                * @private
+                * @version Egret 2.4
+                * @platform Web,Native
+                */
+            get dataView(): DataView;
+            /**
+                * @private
+                */
+            set dataView(value: DataView);
+            /**
+                * @private
+                */
+            get bufferOffset(): number;
+            /**
+                * 将文件指针的当前位置（以字节为单位）移动或返回到 ByteArray 对象中。下一次调用读取方法时将在此位置开始读取，或者下一次调用写入方法时将在此位置开始写入。
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            get position(): number;
+            set position(value: number);
+            /**
+                * ByteArray 对象的长度（以字节为单位）。
+                * 如果将长度设置为大于当前长度的值，则用零填充字节数组的右侧。
+                * 如果将长度设置为小于当前长度的值，将会截断该字节数组。
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            get length(): number;
+            set length(value: number);
+            protected _validateBuffer(value: number): void;
+            /**
+                * 可从字节数组的当前位置到数组末尾读取的数据的字节数。
+                * 每次访问 ByteArray 对象时，将 bytesAvailable 属性与读取方法结合使用，以确保读取有效的数据。
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            get bytesAvailable(): number;
+            /**
+                * 清除字节数组的内容，并将 length 和 position 属性重置为 0。
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            clear(): void;
+            /**
+                * 从字节流中读取布尔值。读取单个字节，如果字节非零，则返回 true，否则返回 false
+                * @return 如果字节不为零，则返回 true，否则返回 false
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readBoolean(): boolean;
+            /**
+                * 从字节流中读取带符号的字节
+                * @return 介于 -128 和 127 之间的整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readByte(): number;
+            /**
+                * 从字节流中读取 length 参数指定的数据字节数。从 offset 指定的位置开始，将字节读入 bytes 参数指定的 ByteArray 对象中，并将字节写入目标 ByteArray 中
+                * @param bytes 要将数据读入的 ByteArray 对象
+                * @param offset bytes 中的偏移（位置），应从该位置写入读取的数据
+                * @param length 要读取的字节数。默认值 0 导致读取所有可用的数据
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readBytes(bytes: ByteArray, offset?: number, length?: number): void;
+            /**
+                * 从字节流中读取一个 IEEE 754 双精度（64 位）浮点数
+                * @return 双精度（64 位）浮点数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readDouble(): number;
+            /**
+                * 从字节流中读取一个 IEEE 754 单精度（32 位）浮点数
+                * @return 单精度（32 位）浮点数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readFloat(): number;
+            /**
+                * 从字节流中读取一个带符号的 32 位整数
+                * @return 介于 -2147483648 和 2147483647 之间的 32 位带符号整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readInt(): number;
+            /**
+                * 从字节流中读取一个带符号的 16 位整数
+                * @return 介于 -32768 和 32767 之间的 16 位带符号整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readShort(): number;
+            /**
+                * 从字节流中读取无符号的字节
+                * @return 介于 0 和 255 之间的无符号整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readUnsignedByte(): number;
+            /**
+                * 从字节流中读取一个无符号的 32 位整数
+                * @return 介于 0 和 4294967295 之间的 32 位无符号整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readUnsignedInt(): number;
+            /**
+                * 从字节流中读取一个无符号的 16 位整数
+                * @return 介于 0 和 65535 之间的 16 位无符号整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readUnsignedShort(): number;
+            /**
+                * 从字节流中读取一个 UTF-8 字符串。假定字符串的前缀是无符号的短整型（以字节表示长度）
+                * @return UTF-8 编码的字符串
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readUTF(): string;
+            /**
+                * 从字节流中读取一个由 length 参数指定的 UTF-8 字节序列，并返回一个字符串
+                * @param length 指明 UTF-8 字节长度的无符号短整型数
+                * @return 由指定长度的 UTF-8 字节组成的字符串
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            readUTFBytes(length: number): string;
+            /**
+                * 写入布尔值。根据 value 参数写入单个字节。如果为 true，则写入 1，如果为 false，则写入 0
+                * @param value 确定写入哪个字节的布尔值。如果该参数为 true，则该方法写入 1；如果该参数为 false，则该方法写入 0
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeBoolean(value: boolean): void;
+            /**
+                * 在字节流中写入一个字节
+                * 使用参数的低 8 位。忽略高 24 位
+                * @param value 一个 32 位整数。低 8 位将被写入字节流
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeByte(value: number): void;
+            /**
+                * 将指定字节数组 bytes（起始偏移量为 offset，从零开始的索引）中包含 length 个字节的字节序列写入字节流
+                * 如果省略 length 参数，则使用默认长度 0；该方法将从 offset 开始写入整个缓冲区。如果还省略了 offset 参数，则写入整个缓冲区
+                * 如果 offset 或 length 超出范围，它们将被锁定到 bytes 数组的开头和结尾
+                * @param bytes ByteArray 对象
+                * @param offset 从 0 开始的索引，表示在数组中开始写入的位置
+                * @param length 一个无符号整数，表示在缓冲区中的写入范围
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeBytes(bytes: ByteArray, offset?: number, length?: number): void;
+            /**
+                * 在字节流中写入一个 IEEE 754 双精度（64 位）浮点数
+                * @param value 双精度（64 位）浮点数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeDouble(value: number): void;
+            /**
+                * 在字节流中写入一个 IEEE 754 单精度（32 位）浮点数
+                * @param value 单精度（32 位）浮点数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeFloat(value: number): void;
+            /**
+                * 在字节流中写入一个带符号的 32 位整数
+                * @param value 要写入字节流的整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeInt(value: number): void;
+            /**
+                * 在字节流中写入一个 16 位整数。使用参数的低 16 位。忽略高 16 位
+                * @param value 32 位整数，该整数的低 16 位将被写入字节流
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeShort(value: number): void;
+            /**
+                * 在字节流中写入一个无符号的 32 位整数
+                * @param value 要写入字节流的无符号整数
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeUnsignedInt(value: number): void;
+            /**
+                * 在字节流中写入一个无符号的 16 位整数
+                * @param value 要写入字节流的无符号整数
+                * @version Egret 2.5
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeUnsignedShort(value: number): void;
+            /**
+                * 将 UTF-8 字符串写入字节流。先写入以字节表示的 UTF-8 字符串长度（作为 16 位整数），然后写入表示字符串字符的字节
+                * @param value 要写入的字符串值
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeUTF(value: string): void;
+            /**
+                * 将 UTF-8 字符串写入字节流。类似于 writeUTF() 方法，但 writeUTFBytes() 不使用 16 位长度的词为字符串添加前缀
+                * @param value 要写入的字符串值
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @language zh_CN
+                */
+            writeUTFBytes(value: string): void;
+            /**
+                *
+                * @returns
+                * @version Egret 2.4
+                * @platform Web,Native
+                */
+            toString(): string;
+            /**
+                * @private
+                * 将 Uint8Array 写入字节流
+                * @param bytes 要写入的Uint8Array
+                * @param validateBuffer
+                */
+            _writeUint8Array(bytes: Uint8Array | ArrayLike<number>, validateBuffer?: boolean): void;
+            /**
+                * @param len
+                * @returns
+                * @version Egret 2.4
+                * @platform Web,Native
+                * @private
+                */
+            validate(len: number): boolean;
+            /**
+                * @private
+                * @param len
+                * @param needReplace
+                */
+            protected validateBuffer(len: number): void;
     }
 }
 
@@ -2287,7 +2658,8 @@ declare module 'drongo-cc/services/IService' {
 }
 
 declare module 'drongo-cc/services/BaseService' {
-    import { ResRef, ResURL } from "drongo-cc/drongo-cc";
+    import { ResURL } from "drongo-cc/res/ResURL";
+    import { ResRef } from "drongo-cc/res/ResRef";
     import { IService } from "drongo-cc/services/IService";
     /**
         *  服务基类
@@ -2359,5 +2731,89 @@ declare module 'drongo-cc/services/ServiceManager' {
             uninstall(key: string): void;
     }
     export var serviceManager: ServiceManager;
+}
+
+declare module 'drongo-cc/configs/core/IConfigAccessor' {
+    /**
+        * 配置存取器接口
+        */
+    export interface IConfigAccessor {
+            /**
+                * 保存
+                * @param value
+                */
+            save(value: any): boolean;
+            /**
+                * 获取列表形式存储的配置内容
+                */
+            get<T>(): Array<T>;
+    }
+}
+
+declare module 'drongo-cc/configs/core/IConfigManager' {
+    import { IConfigAccessor } from "drongo-cc/configs/core/IConfigAccessor";
+    /**
+        * 配置管理器接口
+        */
+    export interface IConfigManager {
+            /**
+                * 注册存取器
+                * @param sheet
+                * @param accessors
+                */
+            register(sheet: string, accessors?: IConfigAccessor): void;
+            /**
+                * 加载配置文件
+                * @param sheet
+                * @param callback
+                */
+            load(sheet: string | Array<string>, callback: (err: Error) => void): void;
+            /**
+                * 获取配置存取器
+                * @param sheet
+                */
+            getAccessor(sheet: string): IConfigAccessor;
+    }
+}
+
+declare module 'drongo-cc/configs/BaseConfigAccessor' {
+    import { IConfigAccessor } from "drongo-cc/configs/core/IConfigAccessor";
+    export class BaseConfigAccessor implements IConfigAccessor {
+        constructor();
+        save(value: any): boolean;
+        get<T>(): Array<T>;
+    }
+}
+
+declare module 'drongo-cc/configs/ConfigManager' {
+    import { ResURL } from "drongo-cc/res/ResURL";
+    import { IConfigAccessor } from "drongo-cc/configs/core/IConfigAccessor";
+    /**
+        * 配置表管理器
+        */
+    export class ConfigManager {
+            static KEY: string;
+            /**
+                * 路径转化器
+                */
+            static configPath: (url: string) => ResURL;
+            /**
+                * 注册存取器
+                * @param sheet
+                * @param accessors
+                */
+            static register(sheet: string, accessors?: IConfigAccessor): void;
+            /**
+                * 加载配置文件
+                * @param sheet
+                * @param callback
+                */
+            static load(sheet: string | Array<string>, callback: (err: Error) => void): void;
+            /**
+                * 获取配置存取器
+                * @param sheet
+                */
+            static getAccessor(sheet: string): IConfigAccessor;
+    }
 }
 

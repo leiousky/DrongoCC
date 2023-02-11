@@ -1,6 +1,5 @@
 
-import { List } from "../containers/List";
-import { Dictionary } from "../drongo-cc";
+import { Dictionary } from "../containers/Dictionary";
 import { TickerManager } from "../ticker/TickerManager";
 import { Timer } from "../timer/Timer";
 import { IResManager } from "./IResManager";

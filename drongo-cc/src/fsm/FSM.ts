@@ -1,4 +1,4 @@
-import { Debuger } from "../drongo-cc";
+import { Debuger } from "../utils/Debuger";
 import { Event } from "../events/Event";
 import { EventDispatcher } from "../events/EventDispatcher";
 import { IState } from "./IState";

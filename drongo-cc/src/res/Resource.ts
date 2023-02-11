@@ -1,5 +1,5 @@
 import { Asset, assetManager, instantiate, isValid, Node, Prefab } from "cc";
-import { Debuger } from "../drongo-cc";
+import { Debuger } from "../utils/Debuger";
 import { IRecyclable } from "../utils/Pool";
 import { IResource } from "./IResource";
 import { ResRef } from "./ResRef";
