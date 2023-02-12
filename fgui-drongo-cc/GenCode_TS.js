@@ -20,6 +20,8 @@ function genCode(handler) {
     let getMemberByName = settings.getMemberByName;
     let classCnt = classes.Count;
     let writer = new CodeWriter_1.default({ blockFromNewLine: false, usingTabs: true });
+    writer.writeln('import * as fgui from "drongo-fgui";');
+    writer.writeln();
     for (let i = 0; i < classCnt; i++) {
         let classInfo = classes.get_Item(i);
         let members = classInfo.members;

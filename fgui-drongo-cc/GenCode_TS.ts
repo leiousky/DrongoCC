@@ -23,6 +23,9 @@ function genCode(handler: FairyEditor.PublishHandler) {
 
     let classCnt = classes.Count;
     let writer = new CodeWriter({ blockFromNewLine: false, usingTabs: true });
+    
+    writer.writeln('import * as fgui from "drongo-fgui";');
+    writer.writeln();
     for (let i: number = 0; i < classCnt; i++) {
         let classInfo = classes.get_Item(i);
         let members = classInfo.members;
