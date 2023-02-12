@@ -941,10 +941,10 @@ declare module 'drongo-cc/events/EventDispatcher' {
             offAllEvent(): void;
             /**
                 * 派发事件
-                * @param key
+                * @param type
                 * @param data
                 */
-            emit(key: string, data?: any): void;
+            emit(type: string, data?: any): void;
             /**
                 * 是否有事件监听
                 * @param key
@@ -2658,32 +2658,26 @@ declare module 'drongo-cc/services/IService' {
 }
 
 declare module 'drongo-cc/services/BaseService' {
-    import { ResURL } from "drongo-cc/res/ResURL";
-    import { ResRef } from "drongo-cc/res/ResRef";
     import { IService } from "drongo-cc/services/IService";
     /**
         *  服务基类
         *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
-        *  2.  重写$assetsLoaded函数，并在完成初始化后调用this.initComplete()
+        *  2.  重写$configsLoaded函数，并在完成初始化后调用this.initComplete()
         */
     export class BaseService implements IService {
             /**名称 */
             name: string;
             /**
-                * 依赖资源URL
+                * 依赖的配置表名称
                 */
-            protected $assets: Array<ResURL>;
-            /**
-                * 依赖资源引用
-                */
-            protected $assetRefs: Map<string, ResRef>;
+            protected $configs: Array<string>;
             protected __initCallback: (err: Error, result: IService) => void;
             constructor();
             init(callback: (err: Error, result: IService) => void): void;
             /**
-                * 依赖资源加载完成
+                * 依赖配置加载完成
                 */
-            protected $assetsLoaded(): void;
+            protected $configsLoaded(): void;
             /**
                 * 初始化完成时调用
                 */
@@ -2793,10 +2787,11 @@ declare module 'drongo-cc/configs/ConfigManager' {
         */
     export class ConfigManager {
             static KEY: string;
+            static set configPath(value: (sheet: string) => ResURL);
             /**
                 * 路径转化器
                 */
-            static configPath: (url: string) => ResURL;
+            static get configPath(): (sheet: string) => ResURL;
             /**
                 * 注册存取器
                 * @param sheet

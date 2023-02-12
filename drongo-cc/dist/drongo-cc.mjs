@@ -1,4 +1,4 @@
-import { sys, Texture2D, gfx, find, Node, director, Component as Component$1, Asset, Prefab, instantiate, isValid, assetManager, SpriteFrame, AudioSource } from 'cc';
+import { sys, Texture2D, gfx, find, Node, director, Component as Component$1, Asset, Prefab, instantiate, isValid, assetManager, SpriteFrame, AudioSource, BufferAsset } from 'cc';
 import { DEBUG } from 'cc/env';
 
 /**
@@ -53,6 +53,10 @@ class EventDispatcher {
          * 事件派发器上所监听的处理器
          */
         this.keyMap = new Map();
+        /**
+         * 需要派发的事件
+         */
+        this.needEmit = new Array;
     }
     /**
      * 添加事件
@@ -167,19 +171,33 @@ class EventDispatcher {
     }
     /**
      * 派发事件
-     * @param key
+     * @param type
      * @param data
      */
-    emit(key, data) {
-        if (this.keyMap.has(key) == false) {
-            return;
+    emit(type, data) {
+        for (let index = 0; index < this.needEmit.length; index++) {
+            const element = this.needEmit[index];
+            if (element.type == type && element.data === data) {
+                return;
+            }
         }
-        let infoList = this.keyMap.get(key);
-        let info;
-        for (let index = 0; index < infoList.length; index++) {
-            info = infoList[index];
-            info.handler.apply(info.target, [key, this, data]);
+        this.needEmit.push({ type, data });
+        TickerManager.callNextFrame(this.__emit, this);
+    }
+    __emit() {
+        for (let index = 0; index < this.needEmit.length; index++) {
+            const event = this.needEmit[index];
+            if (this.keyMap.has(event.type) == false) {
+                continue;
+            }
+            let infoList = this.keyMap.get(event.type);
+            let info;
+            for (let index = 0; index < infoList.length; index++) {
+                info = infoList[index];
+                info.handler.apply(info.target, [event.type, this, event.data]);
+            }
         }
+        this.needEmit.length = 0;
     }
     /**
      * 是否有事件监听
@@ -5689,27 +5707,26 @@ LoadingView.KEY = "drongo.LoadingView";
 /**
  *  服务基类
  *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
- *  2.  重写$assetsLoaded函数，并在完成初始化后调用this.initComplete()
+ *  2.  重写$configsLoaded函数，并在完成初始化后调用this.initComplete()
  */
 class BaseService {
     constructor() {
     }
     init(callback) {
         this.__initCallback = callback;
-        if (this.$assets && this.$assets.length <= 0) ;
+        if (this.$configs == null || this.$configs.length <= 0) {
+            this.$configsLoaded();
+        }
         else {
-            Res.getResRefMap(this.$assets, this.name).then(value => {
-                this.$assetRefs = value;
-                this.$assetsLoaded();
-            }, reason => {
-                throw new Error(this.name + "依赖资源加载出错：" + reason.toString());
+            ConfigManager.load(this.$configs, (err) => {
+                this.$configsLoaded();
             });
         }
     }
     /**
-     * 依赖资源加载完成
+     * 依赖配置加载完成
      */
-    $assetsLoaded() {
+    $configsLoaded() {
     }
     /**
      * 初始化完成时调用
@@ -5722,13 +5739,7 @@ class BaseService {
     }
     destroy() {
         this.name = undefined;
-        this.$assets = null;
-        if (this.$assetRefs) {
-            this.$assetRefs.forEach(ref => {
-                ref.dispose();
-            });
-            this.$assetRefs = null;
-        }
+        this.$configs = null;
         this.__initCallback = null;
     }
 }
@@ -6013,6 +6024,8 @@ class ConfigManagerImpl {
                 //解析
                 this.__parseConfig(sheet, buffer);
                 this.__loaded.set(sheet, true);
+                //原始资源可以销毁了
+                value.dispose();
             }
             if (callback)
                 callback();
@@ -6078,6 +6091,31 @@ class ConfigManagerImpl {
  * 配置表管理器
  */
 class ConfigManager {
+    static set configPath(value) {
+        this.__configPath = value;
+    }
+    /**
+     * 路径转化器
+     */
+    static get configPath() {
+        if (this.__configPath == null) {
+            return this.defaultConfigPath;
+        }
+        return this.__configPath;
+    }
+    /**
+     * 默认路径转换器
+     * @param sheet
+     * @returns
+     */
+    static defaultConfigPath(sheet) {
+        let result = {
+            url: "configs/" + sheet,
+            bundle: "Res",
+            type: BufferAsset
+        };
+        return result;
+    }
     /**
      * 注册存取器
      * @param sheet

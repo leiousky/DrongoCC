@@ -3,6 +3,7 @@ import { ResURL } from "../res/ResURL";
 import { ConfigManagerImpl } from "./ConfigManagerImpl";
 import { IConfigAccessor } from "./core/IConfigAccessor";
 import { IConfigManager } from "./core/IConfigManager";
+import { BufferAsset } from "cc";
 
 
 /**
@@ -12,10 +13,35 @@ export class ConfigManager {
 
     static KEY: string = "drongo.ConfigManager"
 
+
+    private static __configPath: (sheet: string) => ResURL;
+    static set configPath(value: (sheet: string) => ResURL) {
+        this.__configPath = value;
+    }
+
     /**
      * 路径转化器
      */
-    static configPath: (url: string) => ResURL;
+    static get configPath(): (sheet: string) => ResURL {
+        if (this.__configPath == null) {
+            return this.defaultConfigPath;
+        }
+        return this.__configPath;
+    }
+
+    /**
+     * 默认路径转换器
+     * @param sheet 
+     * @returns 
+     */
+    private static defaultConfigPath(sheet: string): ResURL {
+        let result: ResURL = {
+            url: "configs/" + sheet,
+            bundle: "Res",
+            type: BufferAsset
+        }
+        return result;
+    }
 
     /**
      * 注册存取器
