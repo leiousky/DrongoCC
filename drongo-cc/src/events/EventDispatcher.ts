@@ -1,3 +1,4 @@
+import { TickerManager } from "../drongo-cc";
 import { IEventDispatcher } from "./IEventDispatcher";
 
 
@@ -16,6 +17,11 @@ export class EventDispatcher implements IEventDispatcher {
      * 事件派发器上所监听的处理器
      */
     private keyMap: Map<string, EventInfo[]> = new Map<string, EventInfo[]>();
+
+    /**
+     * 需要派发的事件
+     */
+    private needEmit: Array<{ type: string, data: any }> = new Array<{ type: string, data: any }>;
 
     constructor() {
 
@@ -139,19 +145,34 @@ export class EventDispatcher implements IEventDispatcher {
 
     /**
      * 派发事件
-     * @param key 
+     * @param type 
      * @param data 
      */
-    emit(key: string, data?: any): void {
-        if (this.keyMap.has(key) == false) {
-            return;
+    emit(type: string, data?: any): void {
+        for (let index = 0; index < this.needEmit.length; index++) {
+            const element = this.needEmit[index];
+            if (element.type == type && element.data === data) {
+                return;
+            }
         }
-        let infoList: EventInfo[] = this.keyMap.get(key)!;
-        let info: EventInfo;
-        for (let index = 0; index < infoList.length; index++) {
-            info = infoList[index];
-            info.handler.apply(info.target, [key, this, data]);
+        this.needEmit.push({ type, data });
+        TickerManager.callNextFrame(this.__emit, this);
+    }
+
+    private __emit(): void {
+        for (let index = 0; index < this.needEmit.length; index++) {
+            const event = this.needEmit[index];
+            if (this.keyMap.has(event.type) == false) {
+                continue;
+            }
+            let infoList: EventInfo[] = this.keyMap.get(event.type)!;
+            let info: EventInfo;
+            for (let index = 0; index < infoList.length; index++) {
+                info = infoList[index];
+                info.handler.apply(info.target, [event.type, this, event.data]);
+            }
         }
+        this.needEmit.length = 0;
     }
 
     /**
