@@ -156,20 +156,20 @@ export class Res {
         }
         bundle.load(fullURL(url), url.type, progress, (err: Error, asset: Asset) => {
             if (err) {
-                cb(err);
+                cb&&cb(err);
                 return;
             }
             const urlKey = url2Key(url);
             //如果已经存在
             if (ResManager.hasRes(urlKey)) {
-                cb(undefined, ResManager.addResRef(urlKey, refKey));
+                cb&&cb(undefined, ResManager.addResRef(urlKey, refKey));
                 return;
             } else {
                 let res: Resource = new Resource();
                 res.key = urlKey;
                 res.content = asset;
                 ResManager.addRes(res);
-                cb(undefined, ResManager.addResRef(urlKey, refKey));
+                cb&&cb(undefined, ResManager.addResRef(urlKey, refKey));
             }
         });
     }

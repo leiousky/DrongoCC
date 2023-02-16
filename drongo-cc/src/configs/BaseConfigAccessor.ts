@@ -2,6 +2,9 @@ import { IConfigAccessor } from "./core/IConfigAccessor";
 
 
 
+/**
+ * 配置存取器基类
+ */
 export class BaseConfigAccessor implements IConfigAccessor {
 
     private __configs: Array<any>;

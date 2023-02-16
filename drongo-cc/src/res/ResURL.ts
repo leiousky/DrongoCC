@@ -28,14 +28,14 @@ export function key2URL(key: string): ResURL {
  * @returns 
  */
 export function fullURL(url: ResURL): string {
-    if(typeof url=="string"){
+    if (typeof url == "string") {
         return url;
     }
-    if(url.type==Texture2D){
-        return url.url+"/texture";
+    if (url.type == Texture2D) {
+        return url.url + "/texture";
     }
-    if(url.type==SpriteFrame){
-        return url.url+"/spriteFrame"
+    if (url.type == SpriteFrame) {
+        return url.url + "/spriteFrame"
     }
     return url.url;
 }
@@ -112,15 +112,15 @@ class ResURLUtils {
         let className: string;
         if (typeof clazz != "string") {
             className = clazz.toString();
+            className = className.replace("function ", "");
+            let index: number = className.indexOf("()");
+            if (index < 0) {
+                throw new Error("获取类型名称错误：" + className);
+            }
+            className = className.substring(0, index);
         } else {
             className = clazz;
         }
-        className = className.replace("function ", "");
-        let index: number = className.indexOf("()");
-        if (index < 0) {
-            throw new Error("获取类型名称错误：" + className);
-        }
-        className = className.substring(0, index);
         if (!this.__assetTypes.has(className)) {
             this.__assetTypes.set(className, clazz);
         }

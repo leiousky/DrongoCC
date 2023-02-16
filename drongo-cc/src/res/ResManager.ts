@@ -8,7 +8,7 @@ import { ResRef } from "./ResRef";
 
 export class ResManager {
 
-    static KEY: string = "ResManager";
+    static KEY: string = "drongo.ResManager";
 
     /**
      * 资源保留长时间GC
