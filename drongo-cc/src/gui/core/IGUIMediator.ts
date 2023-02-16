@@ -6,6 +6,11 @@ export interface IGUIMediator {
 
     info: any;
 
+    /**
+     * 依赖的服务
+     */
+    services: Array<string>;
+
     /**初始化完毕 */
     inited: boolean;
 

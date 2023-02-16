@@ -1,6 +1,6 @@
 {
   "name": "drongo-gui",
-  "version": "1.0.5",
+  "version": "1.0.13",
   "description": "ui lib",
   "main": "dist/drongo-gui.mjs",
   "types": "dist/drongo-gui.d.ts",
@@ -20,7 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^14.0.1",
-    "drongo-cc": "^1.0.27",
+    "drongo-cc": "^1.0.34",
     "drongo-fgui": "^1.1.2",
     "lodash": "^4.17.15",
     "rollup": "^3.7.3"

@@ -1,7 +1,5 @@
 import { IGUIMediator } from "./IGUIMediator";
 
-
-
 /**
  * View创建者
  */

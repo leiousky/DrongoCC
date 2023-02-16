@@ -12,13 +12,13 @@ export interface IGUIManager {
      * @param mediatorClass 
      * @param data 
      */
-    register(info: { key: number }): void;
+    register(info: { key: string }): void;
 
     /**
      * 注销
      * @param key 
      */
-    unregister(key: number): void;
+    unregister(key: string): void;
 
     /**
      * 心跳
@@ -31,14 +31,14 @@ export interface IGUIManager {
      * @param key 
      * @param data 
      */
-    open(key: number, data?: any): void;
+    open(key: string, data?: any): void;
 
     /**
      * 关闭
      * @param key 
      * @param checkLayer  是否检查全屏打开记录
      */
-    close(key: number,checkLayer:boolean): void;
+    close(key: string,checkLayer:boolean): void;
 
     /**
      * 关闭所有
@@ -51,29 +51,29 @@ export interface IGUIManager {
      * @param key 
      * @returns
      */
-    getGUIState(key: number): GUIState;
+    getGUIState(key: string): GUIState;
 
     /**
      * 获取GUI中的某个组件
      * @param key    界面全局唯一KEY
      * @param path   组件名称/路径
      */
-    getUIComponent(key: number, path: string): any;
+    getUIComponent(key: string, path: string): any;
 
     /**
      * 获取界面Mediator
      * @param key 界面全局唯一KEY
      */
-    getMediatorByKey(key:number):IGUIMediator;
+    getMediatorByKey(key:string):IGUIMediator;
 
     /**
      * 获得前一个打开的全屏界面
      */
-    getPrevLayer():number;
+    getPrevLayer():string;
     
     /**
      * 是否已打开或打开中
      * @param key 
      */
-    isOpen(key: number): boolean;
+    isOpen(key: string): boolean;
 }

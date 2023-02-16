@@ -22,7 +22,7 @@ export class ResManagerImpl implements IResManager {
     /**
      * 等待销毁的资源
      */
-    protected _waitDestory: Array<IResource> = [];
+    protected _waitDestroy: Array<IResource> = [];
 
     constructor() {
         TickerManager.addTicker(this);
@@ -40,7 +40,7 @@ export class ResManagerImpl implements IResManager {
         }
         this.__resDic.set(value.key, value);
         //标记为待删除
-        this._waitDestory.push(value);
+        this._waitDestroy.push(value);
         value.lastOpTime = Timer.currentTime;
     }
 
@@ -58,9 +58,9 @@ export class ResManagerImpl implements IResManager {
         }
         let res: IResource = this.__resDic.get(key)!;
         //如果在待删除列表中
-        let index: number = this._waitDestory.indexOf(res);
+        let index: number = this._waitDestroy.indexOf(res);
         if (index >= 0) {
-            this._waitDestory.splice(index, 1);
+            this._waitDestroy.splice(index, 1);
         }
         //更新操作时间
         res.lastOpTime = Timer.currentTime;
@@ -75,7 +75,7 @@ export class ResManagerImpl implements IResManager {
         res.removeRef(value);
         if (res.refLength == 0) {
             //放入待删除列表
-            this._waitDestory.push(res);
+            this._waitDestroy.push(res);
         }
         res.lastOpTime = Timer.currentTime;
     }
@@ -83,19 +83,19 @@ export class ResManagerImpl implements IResManager {
     gc(ignoreTime?: boolean): void {
         let res: IResource;
         let currentTime: number = Timer.currentTime;
-        for (let index = 0; index < this._waitDestory.length; index++) {
-            res = this._waitDestory[index];
+        for (let index = 0; index < this._waitDestroy.length; index++) {
+            res = this._waitDestroy[index];
             if (res.refCount > 0) {
                 continue;
             }
             //如果忽略时间机制
             if (ignoreTime == true) {
-                this._waitDestory.splice(index, 1);
-                this.destoryRes(res);
+                this._waitDestroy.splice(index, 1);
+                this.destroyRes(res);
                 index--;
             } else if (currentTime - res.lastOpTime > ResManager.GC_TIME) {//超过允许的时间就回收
-                this._waitDestory.splice(index, 1);
-                this.destoryRes(res);
+                this._waitDestroy.splice(index, 1);
+                this.destroyRes(res);
                 index--;
             }
         }
@@ -105,7 +105,7 @@ export class ResManagerImpl implements IResManager {
      * 销毁
      * @param value 
      */
-    protected destoryRes(value: IResource): void {
+    protected destroyRes(value: IResource): void {
         this.__resDic.delete(value.key);
         value.destroy();
     }

@@ -2326,6 +2326,10 @@ declare module 'drongo-cc/gui/core/IGUIMediator' {
     import { IViewComponent } from "drongo-cc/gui/core/IViewComponent";
     export interface IGUIMediator {
             info: any;
+            /**
+                * 依赖的服务
+                */
+            services: Array<string>;
             /**初始化完毕 */
             inited: boolean;
             /**
@@ -2398,13 +2402,13 @@ declare module 'drongo-cc/gui/core/IGUIManager' {
                 * @param data
                 */
             register(info: {
-                    key: number;
+                    key: string;
             }): void;
             /**
                 * 注销
                 * @param key
                 */
-            unregister(key: number): void;
+            unregister(key: string): void;
             /**
                 * 心跳
                 * @param dt
@@ -2415,13 +2419,13 @@ declare module 'drongo-cc/gui/core/IGUIManager' {
                 * @param key
                 * @param data
                 */
-            open(key: number, data?: any): void;
+            open(key: string, data?: any): void;
             /**
                 * 关闭
                 * @param key
                 * @param checkLayer  是否检查全屏打开记录
                 */
-            close(key: number, checkLayer: boolean): void;
+            close(key: string, checkLayer: boolean): void;
             /**
                 * 关闭所有
                 * @param key
@@ -2432,27 +2436,27 @@ declare module 'drongo-cc/gui/core/IGUIManager' {
                 * @param key
                 * @returns
                 */
-            getGUIState(key: number): GUIState;
+            getGUIState(key: string): GUIState;
             /**
                 * 获取GUI中的某个组件
                 * @param key    界面全局唯一KEY
                 * @param path   组件名称/路径
                 */
-            getUIComponent(key: number, path: string): any;
+            getUIComponent(key: string, path: string): any;
             /**
                 * 获取界面Mediator
                 * @param key 界面全局唯一KEY
                 */
-            getMediatorByKey(key: number): IGUIMediator;
+            getMediatorByKey(key: string): IGUIMediator;
             /**
                 * 获得前一个打开的全屏界面
                 */
-            getPrevLayer(): number;
+            getPrevLayer(): string;
             /**
                 * 是否已打开或打开中
                 * @param key
                 */
-            isOpen(key: number): boolean;
+            isOpen(key: string): boolean;
     }
 }
 
@@ -2496,49 +2500,49 @@ declare module 'drongo-cc/gui/GUIManager' {
                 * @returns
                 */
             static register(info: {
-                    key: number;
+                    key: string;
             }): void;
             /**
                 * 注销
                 * @param key
                 * @returns
                 */
-            static unregister(key: number): void;
-            static open(key: number, data?: any): void;
+            static unregister(key: string): void;
+            static open(key: string, data?: any): void;
             /**
                 * 关闭
                 * @param key
                 * @param checkLayer 是否检查全屏记录
                 */
-            static close(key: number, checkLayer?: boolean): void;
+            static close(key: string, checkLayer?: boolean): void;
             static closeAll(): void;
             /**
                 * 获取界面状态
                 * @param key
                 * @returns  0 未显示  1显示中
                 */
-            static getGUIState(key: number): GUIState;
+            static getGUIState(key: string): GUIState;
             /**
                 * 是否已打开或再打开中
                 * @param key
                 * @returns
                 */
-            static isOpen(key: number): boolean;
+            static isOpen(key: string): boolean;
             /**
                 * 获取GUI中的某个组件
                 * @param key    界面全局唯一KEY
                 * @param path   组件名称/路径
                 */
-            static getUIComponent(key: number, path: string): any;
+            static getUIComponent(key: string, path: string): any;
             /**
                 * 获取界面的mediator
                 */
-            static getMediatorByKey(key: number): IGUIMediator;
+            static getMediatorByKey(key: string): IGUIMediator;
             /**
                 * 获得前一个打开的全屏界面
                 * @param curLayerKey 当前打开的全屏界面
                 */
-            static getPrevLayer(): number;
+            static getPrevLayer(): string;
     }
 }
 
@@ -2550,11 +2554,11 @@ declare module 'drongo-cc/gui/relations/IRelationList' {
             /**
                 * 要显示的UI列表
                 */
-            show: Array<number>;
+            show: Array<string>;
             /**
                 * 要隐藏的UI列表
                 */
-            hide: Array<number>;
+            hide: Array<string>;
     }
 }
 
@@ -2582,9 +2586,9 @@ declare module 'drongo-cc/gui/relations/RelationManager' {
      */
     export class RelationManager {
             constructor();
-            static addRelation(key: number, value: IRelationInfo): void;
-            static removeRelation(key: number): void;
-            static getRelation(key: number): IRelationInfo;
+            static addRelation(key: string, value: IRelationInfo): void;
+            static removeRelation(key: string): void;
+            static getRelation(key: string): IRelationInfo;
     }
 }
 
@@ -2658,11 +2662,13 @@ declare module 'drongo-cc/services/IService' {
 }
 
 declare module 'drongo-cc/services/BaseService' {
+    import { ResRef } from "drongo-cc/res/ResRef";
+    import { ResURL } from "drongo-cc/res/ResURL";
     import { IService } from "drongo-cc/services/IService";
     /**
         *  服务基类
-        *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
-        *  2.  重写$configsLoaded函数，并在完成初始化后调用this.initComplete()
+        *  1.  如果有依赖的资源请在子类构造函数中给this.$configs和this.$assets进行赋值
+        *  2.  重写$configAndAssetReady函数，并在完成初始化后调用this.initComplete()
         */
     export class BaseService implements IService {
             /**名称 */
@@ -2671,13 +2677,18 @@ declare module 'drongo-cc/services/BaseService' {
                 * 依赖的配置表名称
                 */
             protected $configs: Array<string>;
+            /**
+                * 依赖的资源
+                */
+            protected $assets: Array<ResURL>;
+            protected $assetRefs: Array<ResRef>;
             protected __initCallback: (err: Error, result: IService) => void;
             constructor();
             init(callback: (err: Error, result: IService) => void): void;
             /**
-                * 依赖配置加载完成
+                * 依赖的配置与资源准备完毕
                 */
-            protected $configsLoaded(): void;
+            protected $configAndAssetReady(): void;
             /**
                 * 初始化完成时调用
                 */
@@ -2772,6 +2783,9 @@ declare module 'drongo-cc/configs/core/IConfigManager' {
 
 declare module 'drongo-cc/configs/BaseConfigAccessor' {
     import { IConfigAccessor } from "drongo-cc/configs/core/IConfigAccessor";
+    /**
+      * 配置存取器基类
+      */
     export class BaseConfigAccessor implements IConfigAccessor {
         constructor();
         save(value: any): boolean;

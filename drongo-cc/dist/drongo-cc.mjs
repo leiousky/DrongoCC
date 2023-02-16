@@ -3708,7 +3708,7 @@ class ResManagerImpl {
         /**
          * 等待销毁的资源
          */
-        this._waitDestory = [];
+        this._waitDestroy = [];
         TickerManager.addTicker(this);
     }
     tick(dt) {
@@ -3722,7 +3722,7 @@ class ResManagerImpl {
         }
         this.__resDic.set(value.key, value);
         //标记为待删除
-        this._waitDestory.push(value);
+        this._waitDestroy.push(value);
         value.lastOpTime = Timer.currentTime;
     }
     hasRes(key) {
@@ -3737,9 +3737,9 @@ class ResManagerImpl {
         }
         let res = this.__resDic.get(key);
         //如果在待删除列表中
-        let index = this._waitDestory.indexOf(res);
+        let index = this._waitDestroy.indexOf(res);
         if (index >= 0) {
-            this._waitDestory.splice(index, 1);
+            this._waitDestroy.splice(index, 1);
         }
         //更新操作时间
         res.lastOpTime = Timer.currentTime;
@@ -3753,27 +3753,27 @@ class ResManagerImpl {
         res.removeRef(value);
         if (res.refLength == 0) {
             //放入待删除列表
-            this._waitDestory.push(res);
+            this._waitDestroy.push(res);
         }
         res.lastOpTime = Timer.currentTime;
     }
     gc(ignoreTime) {
         let res;
         let currentTime = Timer.currentTime;
-        for (let index = 0; index < this._waitDestory.length; index++) {
-            res = this._waitDestory[index];
+        for (let index = 0; index < this._waitDestroy.length; index++) {
+            res = this._waitDestroy[index];
             if (res.refCount > 0) {
                 continue;
             }
             //如果忽略时间机制
             if (ignoreTime == true) {
-                this._waitDestory.splice(index, 1);
-                this.destoryRes(res);
+                this._waitDestroy.splice(index, 1);
+                this.destroyRes(res);
                 index--;
             }
             else if (currentTime - res.lastOpTime > ResManager.GC_TIME) { //超过允许的时间就回收
-                this._waitDestory.splice(index, 1);
-                this.destoryRes(res);
+                this._waitDestroy.splice(index, 1);
+                this.destroyRes(res);
                 index--;
             }
         }
@@ -3782,7 +3782,7 @@ class ResManagerImpl {
      * 销毁
      * @param value
      */
-    destoryRes(value) {
+    destroyRes(value) {
         this.__resDic.delete(value.key);
         value.destroy();
     }
@@ -3852,7 +3852,7 @@ class ResManager {
         return this.__impl;
     }
 }
-ResManager.KEY = "ResManager";
+ResManager.KEY = "drongo.ResManager";
 /**
  * 资源保留长时间GC
  */
@@ -4089,16 +4089,16 @@ class ResURLUtils {
         let className;
         if (typeof clazz != "string") {
             className = clazz.toString();
+            className = className.replace("function ", "");
+            let index = className.indexOf("()");
+            if (index < 0) {
+                throw new Error("获取类型名称错误：" + className);
+            }
+            className = className.substring(0, index);
         }
         else {
             className = clazz;
         }
-        className = className.replace("function ", "");
-        let index = className.indexOf("()");
-        if (index < 0) {
-            throw new Error("获取类型名称错误：" + className);
-        }
-        className = className.substring(0, index);
         if (!this.__assetTypes.has(className)) {
             this.__assetTypes.set(className, clazz);
         }
@@ -4258,13 +4258,13 @@ class Res {
         }
         bundle.load(fullURL(url), url.type, progress, (err, asset) => {
             if (err) {
-                cb(err);
+                cb && cb(err);
                 return;
             }
             const urlKey = url2Key(url);
             //如果已经存在
             if (ResManager.hasRes(urlKey)) {
-                cb(undefined, ResManager.addResRef(urlKey, refKey));
+                cb && cb(undefined, ResManager.addResRef(urlKey, refKey));
                 return;
             }
             else {
@@ -4272,7 +4272,7 @@ class Res {
                 res.key = urlKey;
                 res.content = asset;
                 ResManager.addRes(res);
-                cb(undefined, ResManager.addResRef(urlKey, refKey));
+                cb && cb(undefined, ResManager.addResRef(urlKey, refKey));
             }
         });
     }
@@ -5684,12 +5684,21 @@ RelationManager.__map = new Map();
  */
 class LoadingView {
     static show() {
+        if (!this.impl) {
+            return;
+        }
         this.impl.show();
     }
     static hide() {
+        if (!this.impl) {
+            return;
+        }
         this.impl.hide();
     }
     static changeData(data) {
+        if (!this.impl) {
+            return;
+        }
         this.impl.changeData(data);
     }
     static get impl() {
@@ -5697,7 +5706,7 @@ class LoadingView {
             this.__impl = Injector.getInject(this.KEY);
         }
         if (this.__impl == null) {
-            throw new Error(this.KEY + "为注入");
+            console.warn(this.KEY + "未注入");
         }
         return this.__impl;
     }
@@ -5706,8 +5715,8 @@ LoadingView.KEY = "drongo.LoadingView";
 
 /**
  *  服务基类
- *  1.  如果有依赖的资源请在子类构造函数中给this.$assets进行赋值
- *  2.  重写$configsLoaded函数，并在完成初始化后调用this.initComplete()
+ *  1.  如果有依赖的资源请在子类构造函数中给this.$configs和this.$assets进行赋值
+ *  2.  重写$configAndAssetReady函数，并在完成初始化后调用this.initComplete()
  */
 class BaseService {
     constructor() {
@@ -5715,18 +5724,38 @@ class BaseService {
     init(callback) {
         this.__initCallback = callback;
         if (this.$configs == null || this.$configs.length <= 0) {
-            this.$configsLoaded();
+            this.__configLoaded();
         }
         else {
-            ConfigManager.load(this.$configs, (err) => {
-                this.$configsLoaded();
-            });
+            this.__loadConfigs();
         }
     }
+    __loadConfigs() {
+        ConfigManager.load(this.$configs, this.__configLoaded.bind(this));
+    }
+    __configLoaded(err) {
+        if (err) {
+            throw new Error("配置加载错误：" + err.message);
+        }
+        if (this.$assets == null || this.$assets.length <= 0) {
+            this.$configAndAssetReady();
+        }
+        else {
+            this.__loadAssets();
+        }
+    }
+    __loadAssets() {
+        Res.getResRefList(this.$assets, this.name).then((value) => {
+            this.$assetRefs = value;
+            this.$configAndAssetReady();
+        }, (reason) => {
+            throw new Error(this.name + "依赖资源加载出错:" + reason);
+        });
+    }
     /**
-     * 依赖配置加载完成
+     * 依赖的配置与资源准备完毕
      */
-    $configsLoaded() {
+    $configAndAssetReady() {
     }
     /**
      * 初始化完成时调用
@@ -5849,6 +5878,9 @@ class ServiceManager {
 }
 var serviceManager = new ServiceManager();
 
+/**
+ * 配置存取器基类
+ */
 class BaseConfigAccessor {
     constructor() {
     }

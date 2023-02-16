@@ -11,14 +11,23 @@ export class LoadingView {
     static KEY: string = "drongo.LoadingView";
 
     static show(): void {
+        if (!this.impl) {
+            return;
+        }
         this.impl.show();
     }
 
     static hide(): void {
+        if (!this.impl) {
+            return;
+        }
         this.impl.hide();
     }
 
     static changeData(data: ILoadingData): void {
+        if (!this.impl) {
+            return;
+        }
         this.impl.changeData(data);
     }
 
@@ -28,7 +37,7 @@ export class LoadingView {
             this.__impl = Injector.getInject(this.KEY);
         }
         if (this.__impl == null) {
-            throw new Error(this.KEY + "为注入");
+            console.warn(this.KEY + "未注入");
         }
         return this.__impl;
     }

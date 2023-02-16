@@ -1,6 +1,6 @@
 import { Color } from "cc";
 import { GUIManager, IGUIMediator } from "drongo-cc";
-import { AsyncOperation, GComponent, GGraph, GObject, RelationType, UIPackage } from "drongo-fgui";
+import { AsyncOperation, GComponent, GGraph, GObject, UIPackage } from "drongo-fgui";
 import { BaseMediator } from "./BaseMediator";
 import { GUISettings } from "./GUISettings";
 import { IGUIInfo } from "./IGUIInfo";
@@ -11,11 +11,14 @@ import { SubGUIMediator } from "./SubGUIMediator";
  * UI中介者
  */
 export class GUIMediator extends BaseMediator implements IGUIMediator {
-    /**根节点 */
-    viewComponent: GComponent | null = null;
-
 
     info: IGUIInfo | null = null;
+
+    /**依赖的服务 */
+    services: Array<string>;
+
+    /**根节点 */
+    viewComponent: GComponent | null = null;
 
     /**遮罩 */
     private __mask: GGraph | null = null;
@@ -78,22 +81,12 @@ export class GUIMediator extends BaseMediator implements IGUIMediator {
             this.viewComponent.addChild(this.__mask);
             if (this.info!.modalClose) {
                 this.__mask.onClick(this._maskClickHandler, this);
-
-                //点击背景关闭提示
-                if (GUISettings.closeTipCompURL != null) {
-                    let comp = UIPackage.createObjectFromURL(GUISettings.closeTipCompURL);
-                    this.__mask.node.addChild(comp.node);
-                    //水平居中 底对齐
-                    comp.setPosition((comp.width - comp.width) * 0.5, comp.height - 50);
-                    comp.addRelation(comp, RelationType.Center_Center);
-                    comp.addRelation(comp, RelationType.Bottom_Bottom);
-                }
             }
             this.viewComponent.addChild(this.ui!);
         } else {
             this.ui = this.viewComponent = uiCom;
         }
-        this.ui.name = this.info.uiName;
+        this.ui.name = this.info.key;
         if (this.__createdCallBack) {
             this.__createdCallBack();
             this.__createdCallBack = null;
@@ -147,9 +140,11 @@ export class GUIMediator extends BaseMediator implements IGUIMediator {
     }
 
     tick(dt: number): void {
-        for (let index = 0; index < this.$subMediators.length; index++) {
-            const element = this.$subMediators[index];
-            element.tick(dt);
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.tick(dt);
+            }
         }
     }
 

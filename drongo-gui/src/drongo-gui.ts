@@ -16,3 +16,6 @@ export { GUIManagerImpl } from "./gui/GUIManagerImpl"
 export { GUIProxy } from "./gui/GUIProxy"
 export { GUIMediator } from "./gui/GUIMediator"
 export { SubGUIMediator } from "./gui/SubGUIMediator"
+
+//引擎初始化入口
+export { Drongo } from "./Drongo"

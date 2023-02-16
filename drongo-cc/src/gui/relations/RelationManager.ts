@@ -7,13 +7,13 @@ import { IRelationList } from "./IRelationList";
 */
 export class RelationManager {
 
-    private static __map: Map<number, IRelationInfo> = new Map<number, IRelationInfo>();
+    private static __map: Map<string, IRelationInfo> = new Map<string, IRelationInfo>();
 
     constructor() {
 
     }
 
-    static addRelation(key: number, value: IRelationInfo): void {
+    static addRelation(key: string, value: IRelationInfo): void {
         if (DEBUG) {
             this.__checkValidity(key, value);
         }
@@ -23,7 +23,7 @@ export class RelationManager {
         this.__map.set(key, value);
     }
 
-    static removeRelation(key: number): void {
+    static removeRelation(key: string): void {
         if (!this.__map.has(key)) {
             throw new Error("找不到要删除的内容！");
         }
@@ -34,8 +34,8 @@ export class RelationManager {
      * 检测合法性
      * @param value 
      */
-    private static __checkValidity(key: number, value: IRelationInfo): void {
-        let guiKey: number = key;
+    private static __checkValidity(key: string, value: IRelationInfo): void {
+        let guiKey: string = key;
         let showList: IRelationList = value.show;
         let hideList: IRelationList = value.hide;
         let findex: number;
@@ -74,7 +74,7 @@ export class RelationManager {
         }
     }
 
-    static getRelation(key: number): IRelationInfo {
+    static getRelation(key: string): IRelationInfo {
         return this.__map.get(key);
     }
 }

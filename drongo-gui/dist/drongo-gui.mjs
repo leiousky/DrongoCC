@@ -1,5 +1,5 @@
-import { Resource, key2URL, url2Key, ResManager, BindingUtils, Timer, Res, LoadingView, serviceManager, GUIManager, Event, LayerManager, TickerManager, GUIState, RelationManager } from 'drongo-cc';
-import { UIPackage, GComponent, GRoot, AsyncOperation, GGraph, RelationType } from 'drongo-fgui';
+import { Resource, key2URL, url2Key, ResManager, BindingUtils, Timer, Res, LoadingView, serviceManager, GUIManager, Event, LayerManager, TickerManager, GUIState, RelationManager, Injector } from 'drongo-cc';
+import { UIPackage, GComponent, GRoot, AsyncOperation, GGraph } from 'drongo-fgui';
 import { assetManager, Color, Node } from 'cc';
 
 class FGUIResource extends Resource {
@@ -354,14 +354,14 @@ class GUIProxy {
     __loadAssets() {
         this.__startTime = Timer.currentTime;
         this.__loadState = LoadState.Loading;
-        Res.getResRef(this.__uiURL, this.info.uiName, this.__loadAssetProgress.bind(this)).then(this.__loadAssetComplete.bind(this), this.__loadAssetError.bind(this));
+        Res.getResRef(this.__uiURL, this.info.key, this.__loadAssetProgress.bind(this)).then(this.__loadAssetComplete.bind(this), this.__loadAssetError.bind(this));
     }
     __loadAssetProgress(progress) {
-        LoadingView.changeData({ label: this.info.uiName + " asset loading...", progress: progress });
+        LoadingView.changeData({ label: this.info.key + " asset loading...", progress: progress });
     }
     __loadAssetError(err) {
         if (err) {
-            LoadingView.changeData({ label: err.message });
+            LoadingView.changeData({ label: err });
         }
     }
     __loadAssetComplete(result) {
@@ -375,43 +375,48 @@ class GUIProxy {
         if (!this.__resRef) {
             throw new Error("加载UI资源失败:" + this.info.packageName + " ");
         }
-        //如果有依赖的服务
-        if (this.info.services) {
-            this.__initServices();
-        }
-        else {
-            this.__createUIMediator();
-        }
-    }
-    /**
-     * 初始化服务
-     */
-    __initServices() {
-        return __awaiter(this, void 0, void 0, function* () {
-            for (let index = 0; index < this.info.services.length; index++) {
-                const serviceKey = this.info.services[index];
-                yield serviceManager.getService(serviceKey);
-            }
-            this.__createUIMediator();
-        });
+        this.__createUIMediator();
     }
     /**创建Mediator */
     __createUIMediator() {
-        let viewCreatorCom = GUIProxy.createNode.addComponent(this.info.uiName + "Mediator");
+        let viewCreatorCom = GUIProxy.createNode.addComponent(this.info.key + "ViewCreator");
         let viewCreator = viewCreatorCom;
         if (!viewCreator) {
-            throw new Error(this.info.uiName + "_ViewCreator类不存在或未实现IViewCreator!");
+            throw new Error(this.info.key + "ViewCreator类不存在或未实现IViewCreator!");
         }
         this.mediator = viewCreator.createMediator();
-        //销毁
+        //销毁组件
         viewCreatorCom.destroy();
-        this.__loadState = LoadState.Loaded;
+        if (this.mediator.services) {
+            this.__initServices();
+        }
+        else {
+            this.__createUI();
+        }
+    }
+    /**
+    * 初始化服务
+    */
+    __initServices() {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (let index = 0; index < this.mediator.services.length; index++) {
+                const serviceKey = this.mediator.services[index];
+                yield serviceManager.getService(serviceKey);
+            }
+            this.__createUI();
+        });
+    }
+    /**
+     * 创建UI
+     */
+    __createUI() {
         this.mediator.createUI(this.info, this.__createUICallBack.bind(this));
     }
     /**
      * UI创建完成回调
      */
     __createUICallBack() {
+        this.__loadState = LoadState.Loaded;
         this.mediator.init();
         this.mediator.inited = true;
         if (this.__showing) {
@@ -747,7 +752,7 @@ class GUIManagerImpl {
                 break;
             }
         }
-        return -1;
+        return undefined;
     }
     /**
      * 获取界面状态
@@ -791,9 +796,9 @@ class GUIManagerImpl {
 class GUIMediator extends BaseMediator {
     constructor() {
         super();
+        this.info = null;
         /**根节点 */
         this.viewComponent = null;
-        this.info = null;
         /**遮罩 */
         this.__mask = null;
     }
@@ -841,22 +846,13 @@ class GUIMediator extends BaseMediator {
             this.viewComponent.addChild(this.__mask);
             if (this.info.modalClose) {
                 this.__mask.onClick(this._maskClickHandler, this);
-                //点击背景关闭提示
-                if (GUISettings.closeTipCompURL != null) {
-                    let comp = UIPackage.createObjectFromURL(GUISettings.closeTipCompURL);
-                    this.__mask.node.addChild(comp.node);
-                    //水平居中 底对齐
-                    comp.setPosition((comp.width - comp.width) * 0.5, comp.height - 50);
-                    comp.addRelation(comp, RelationType.Center_Center);
-                    comp.addRelation(comp, RelationType.Bottom_Bottom);
-                }
             }
             this.viewComponent.addChild(this.ui);
         }
         else {
             this.ui = this.viewComponent = uiCom;
         }
-        this.ui.name = this.info.uiName;
+        this.ui.name = this.info.key;
         if (this.__createdCallBack) {
             this.__createdCallBack();
             this.__createdCallBack = null;
@@ -902,9 +898,11 @@ class GUIMediator extends BaseMediator {
         GUIManager.close(this.info.key, checkLayer);
     }
     tick(dt) {
-        for (let index = 0; index < this.$subMediators.length; index++) {
-            const element = this.$subMediators[index];
-            element.tick(dt);
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.tick(dt);
+            }
         }
     }
     destroy() {
@@ -942,4 +940,41 @@ class SubGUIMediator extends BaseMediator {
     }
 }
 
-export { BaseMediator, FGUIResource, GUIManagerImpl, GUIMediator, GUIProxy, GUISettings, Layer, LayerManagerImpl, SubGUIMediator, fguiResLoader };
+class Drongo {
+    /**
+     * 初始化
+     * @param guiconfig
+     * @param layers
+     * @param fullScrene
+     */
+    static init(guiconfig, layers, fullScrene, callback) {
+        Res.setResLoader("fgui", fguiResLoader);
+        Injector.inject(GUIManager.KEY, GUIManagerImpl);
+        Injector.inject(LayerManager.KEY, LayerManagerImpl);
+        //创建层级
+        if (layers && layers.length > 0) {
+            for (let index = 0; index < layers.length; index++) {
+                const layerKey = layers[index];
+                if (fullScrene) {
+                    LayerManager.addLayer(layerKey, new Layer(layerKey));
+                }
+                else {
+                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.includes(layerKey)));
+                }
+            }
+        }
+        //加载guiconfig.json
+        Res.getResRef(guiconfig, "Main").then((result) => {
+            let list = result.content.json;
+            for (let index = 0; index < list.length; index++) {
+                const element = list[index];
+                GUIManager.register(element);
+            }
+            callback();
+        }, (reason) => {
+            throw new Error("初始化引擎出错,gui配置加载错误:" + url2Key(guiconfig));
+        });
+    }
+}
+
+export { BaseMediator, Drongo, FGUIResource, GUIManagerImpl, GUIMediator, GUIProxy, GUISettings, Layer, LayerManagerImpl, SubGUIMediator, fguiResLoader };

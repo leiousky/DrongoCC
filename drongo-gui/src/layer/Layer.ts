@@ -5,7 +5,7 @@ import { GComponent } from "drongo-fgui";
 export class Layer extends GComponent implements ILayer {
 
     isFullScrene:boolean;
-    openRecord:Array<number>;
+    openRecord:Array<string>;
     constructor(name: string,isFullScrene:boolean=false) {
         super();
         this.node.name = name;

@@ -16,6 +16,7 @@ declare module 'drongo-gui' {
     export { GUIProxy } from "drongo-gui/gui/GUIProxy";
     export { GUIMediator } from "drongo-gui/gui/GUIMediator";
     export { SubGUIMediator } from "drongo-gui/gui/SubGUIMediator";
+    export { Drongo } from "drongo-gui/Drongo";
 }
 
 declare module 'drongo-gui/res/FGUILoader' {
@@ -48,7 +49,7 @@ declare module 'drongo-gui/layer/Layer' {
     import { GComponent } from "drongo-fgui";
     export class Layer extends GComponent implements ILayer {
         isFullScrene: boolean;
-        openRecord: Array<number>;
+        openRecord: Array<string>;
         constructor(name: string, isFullScrene?: boolean);
         getCount(): number;
     }
@@ -88,8 +89,6 @@ declare module 'drongo-gui/gui/GUISettings' {
     export class GUISettings {
         /**UI遮罩颜色值 */
         static mask_color: Color;
-        /**UI开启蒙版点击时的提示 */
-        static closeTipCompURL: string | null;
     }
 }
 
@@ -99,7 +98,7 @@ declare module 'drongo-gui/gui/IGUIInfo' {
             /**
                 * UI 全局唯一KEY
                 */
-            key: number;
+            key: string;
             /**
                 * 是否永久存在
                 */
@@ -121,10 +120,6 @@ declare module 'drongo-gui/gui/IGUIInfo' {
                 */
             bundleName: string;
             /**
-                * UI名称
-                */
-            uiName: string;
-            /**
                 * UIPackage名称
                 */
             packageName: string;
@@ -134,8 +129,6 @@ declare module 'drongo-gui/gui/IGUIInfo' {
             comName: string;
             /**UI所属状态 */
             state: GUIState;
-            /**依赖的服务 */
-            services?: Array<string>;
     }
 }
 
@@ -245,34 +238,34 @@ declare module 'drongo-gui/gui/GUIManagerImpl' {
     export class GUIManagerImpl implements IGUIManager {
             constructor();
             /**获取某个组件 */
-            getUIComponent(key: number, path: string): any;
+            getUIComponent(key: string, path: string): any;
             /**
                 * 获取界面的mediator
                 * @param key
                 */
-            getMediatorByKey(key: number): IGUIMediator | null;
+            getMediatorByKey(key: string): IGUIMediator | null;
             register(info: IGUIInfo): void;
-            unregister(key: number): void;
+            unregister(key: string): void;
             tick(dt: number): void;
-            open(key: number, data?: any): void;
-            close(key: number, checkLayer?: boolean): void;
+            open(key: string, data?: any): void;
+            close(key: string, checkLayer?: boolean): void;
             closeAll(): void;
             /**
                 * 获得前一个打开的全屏界面
                 */
-            getPrevLayer(): number;
+            getPrevLayer(): string;
             /**
                 * 获取界面状态
                 * @param key
                 */
-            getGUIState(key: number): GUIState;
-            setGUIState(key: number, state: GUIState): void;
+            getGUIState(key: string): GUIState;
+            setGUIState(key: string, state: GUIState): void;
             /**
                 * 是否已打开或打开中
                 * @param key
                 * @returns
                 */
-            isOpen(key: number): boolean;
+            isOpen(key: string): boolean;
     }
 }
 
@@ -316,9 +309,11 @@ declare module 'drongo-gui/gui/GUIMediator' {
         * UI中介者
         */
     export class GUIMediator extends BaseMediator implements IGUIMediator {
+            info: IGUIInfo | null;
+            /**依赖的服务 */
+            services: Array<string>;
             /**根节点 */
             viewComponent: GComponent | null;
-            info: IGUIInfo | null;
             /**子Mediator(用于代码拆分)*/
             protected $subMediators: Array<SubGUIMediator>;
             constructor();
@@ -355,6 +350,19 @@ declare module 'drongo-gui/gui/SubGUIMediator' {
         owner: GUIMediator;
         constructor(ui: GComponent, owner: GUIMediator);
         destroy(): void;
+    }
+}
+
+declare module 'drongo-gui/Drongo' {
+    import { ResURL } from "drongo-cc";
+    export class Drongo {
+        /**
+          * 初始化
+          * @param guiconfig
+          * @param layers
+          * @param fullScrene
+          */
+        static init(guiconfig: ResURL, layers: Array<string>, fullScrene: Array<string>, callback: () => void): void;
     }
 }
 

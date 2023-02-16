@@ -57,18 +57,19 @@ export class GUIProxy {
     private __loadAssets(): void {
         this.__startTime = Timer.currentTime;
         this.__loadState = LoadState.Loading;
-        Res.getResRef(this.__uiURL, this.info.uiName, this.__loadAssetProgress.bind(this)).then(
-            this.__loadAssetComplete.bind(this), this.__loadAssetError.bind(this)
+        Res.getResRef(this.__uiURL, this.info.key, this.__loadAssetProgress.bind(this)).then(
+            this.__loadAssetComplete.bind(this),
+            this.__loadAssetError.bind(this)
         );
     }
 
     private __loadAssetProgress(progress: number): void {
-        LoadingView.changeData({ label: this.info.uiName + " asset loading...", progress: progress })
+        LoadingView.changeData({ label: this.info.key + " asset loading...", progress: progress })
     }
 
     private __loadAssetError(err: any): void {
         if (err) {
-            LoadingView.changeData({ label: err.message });
+            LoadingView.changeData({ label: err });
         }
     }
 
@@ -83,40 +84,43 @@ export class GUIProxy {
         if (!this.__resRef) {
             throw new Error("加载UI资源失败:" + this.info.packageName + " ");
         }
-        //如果有依赖的服务
-        if (this.info.services) {
+        this.__createUIMediator();
+    }
+
+
+
+    /**创建Mediator */
+    private __createUIMediator(): void {
+        let viewCreatorCom: Component = GUIProxy.createNode.addComponent(this.info.key + "ViewCreator");
+        let viewCreator: IViewCreator = <unknown>viewCreatorCom as IViewCreator;
+        if (!viewCreator) {
+            throw new Error(this.info.key + "ViewCreator类不存在或未实现IViewCreator!");
+        }
+        this.mediator = viewCreator.createMediator();
+        //销毁组件
+        viewCreatorCom.destroy();
+        if (this.mediator.services) {
             this.__initServices();
         } else {
-            this.__createUIMediator();
+            this.__createUI();
         }
     }
 
     /**
-     * 初始化服务
-     */
+    * 初始化服务
+    */
     private async __initServices(): Promise<void> {
-        for (let index = 0; index < this.info.services.length; index++) {
-            const serviceKey = this.info.services[index];
+        for (let index = 0; index < this.mediator.services.length; index++) {
+            const serviceKey = this.mediator.services[index];
             await serviceManager.getService(serviceKey);
         }
-        this.__createUIMediator();
+        this.__createUI();
     }
 
-    /**创建Mediator */
-    private __createUIMediator(): void {
-        let viewCreatorCom: Component = GUIProxy.createNode.addComponent(this.info.uiName + "Mediator");
-        let viewCreator: IViewCreator = <unknown>viewCreatorCom as IViewCreator;
-        if (!viewCreator) {
-            throw new Error(this.info.uiName + "_ViewCreator类不存在或未实现IViewCreator!");
-        }
-
-        this.mediator = viewCreator.createMediator();
-
-        //销毁
-        viewCreatorCom.destroy();
-
-        this.__loadState = LoadState.Loaded;
-
+    /**
+     * 创建UI
+     */
+    private __createUI(): void {
         this.mediator!.createUI(this.info, this.__createUICallBack.bind(this));
     }
 
@@ -124,6 +128,7 @@ export class GUIProxy {
      * UI创建完成回调
      */
     private __createUICallBack(): void {
+        this.__loadState = LoadState.Loaded;
         this.mediator!.init();
         this.mediator.inited = true;
         if (this.__showing) {

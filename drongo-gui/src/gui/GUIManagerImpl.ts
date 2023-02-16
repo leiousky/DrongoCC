@@ -1,5 +1,5 @@
 import { Event, GUIManager, GUIState, IEventDispatcher, IGUIManager, IGUIMediator, ILayer, IRelationInfo, IRelationList, LayerManager, LoadingView, RelationManager, TickerManager, Timer } from "drongo-cc";
-import { Layer } from "../drongo-gui";
+import { Layer } from "../layer/Layer";
 import { GUIProxy } from "./GUIProxy";
 import { IGUIInfo } from "./IGUIInfo";
 
@@ -12,14 +12,14 @@ import { IGUIInfo } from "./IGUIInfo";
 export class GUIManagerImpl implements IGUIManager {
 
     /**已注册*/
-    private __registered: Map<number, IGUIInfo> = new Map<number, IGUIInfo>();
+    private __registered: Map<string, IGUIInfo> = new Map<string, IGUIInfo>();
     /**实例 */
-    private __instances: Map<number, GUIProxy> = new Map<number, GUIProxy>();
+    private __instances: Map<string, GUIProxy> = new Map<string, GUIProxy>();
 
     /**
      * 删除列表
      */
-    private __destryList: Array<number> = [];
+    private __destryList: Array<string> = [];
 
     constructor() {
         TickerManager.addTicker(this);
@@ -30,7 +30,7 @@ export class GUIManagerImpl implements IGUIManager {
     }
 
     /**获取某个组件 */
-    getUIComponent(key: number, path: string) {
+    getUIComponent(key: string, path: string) {
         if (!this.__instances.has(key)) {
             throw new Error("GUI：" + key + "实例，不存在！");
         }
@@ -41,7 +41,7 @@ export class GUIManagerImpl implements IGUIManager {
      * 获取界面的mediator
      * @param key 
      */
-    getMediatorByKey(key: number): IGUIMediator | null {
+    getMediatorByKey(key: string): IGUIMediator | null {
         if (!this.__instances.has(key)) {
             return null;
         }
@@ -49,12 +49,12 @@ export class GUIManagerImpl implements IGUIManager {
     }
 
     private __showedHandler(type: string, target: IEventDispatcher, data: any): void {
-        let guiKey: number = data;
+        let guiKey: string = data;
         this.setGUIState(guiKey, GUIState.Showed);
     }
 
     private __closedHandler(type: string, target: IEventDispatcher, data: any): void {
-        let guiKey: number = data;
+        let guiKey: string = data;
         this.setGUIState(guiKey, GUIState.Closed);
     }
 
@@ -65,7 +65,7 @@ export class GUIManagerImpl implements IGUIManager {
         this.__registered.set(info.key, info);
     }
 
-    unregister(key: number): void {
+    unregister(key: string): void {
         if (!this.__registered.has(key)) {
             throw new Error("未找到要注销的界面信息！");
         }
@@ -100,12 +100,12 @@ export class GUIManagerImpl implements IGUIManager {
     }
 
 
-    open(key: number, data?: any): void {
+    open(key: string, data?: any): void {
         this.__open(key, data);
         this.__checkRelation(key, true);
     }
 
-    private __open(key: number, data?: any): void {
+    private __open(key: string, data?: any): void {
         let state: GUIState = this.getGUIState(key);
         let guiProxy: GUIProxy;
         //没打开过！
@@ -160,7 +160,7 @@ export class GUIManagerImpl implements IGUIManager {
         }
     }
 
-    close(key: number, checkLayer: boolean = true): void {
+    close(key: string, checkLayer: boolean = true): void {
         this.__close(key, checkLayer);
         this.__checkRelation(key, false);
     }
@@ -171,7 +171,7 @@ export class GUIManagerImpl implements IGUIManager {
         });
     }
 
-    private __close(key: number, checkLayer: boolean = false): void {
+    private __close(key: string, checkLayer: boolean = false): void {
         let state: GUIState = this.getGUIState(key);
         let guiProxy: GUIProxy;
         //关闭中/已关闭
@@ -190,7 +190,7 @@ export class GUIManagerImpl implements IGUIManager {
         let layer: Layer = LayerManager.getLayer(guiProxy.info.layer) as Layer;
         if (layer.isFullScrene && layer.openRecord.length > 1) {
             layer.openRecord.pop();
-            let guikey: number = layer.openRecord.pop();
+            let guikey: string = layer.openRecord.pop();
             // console.log("关闭："+key+"时，回到："+guikey);
             this.__open(guikey);
         }
@@ -200,7 +200,7 @@ export class GUIManagerImpl implements IGUIManager {
      * 检测UI关联关系
      * @param key 
      */
-    private __checkRelation(key: number, isOpen: boolean): void {
+    private __checkRelation(key: string, isOpen: boolean): void {
         //关联UI
         let relation: IRelationInfo = RelationManager.getRelation(key);
         let relationList: IRelationList;
@@ -211,7 +211,7 @@ export class GUIManagerImpl implements IGUIManager {
             } else {//关闭
                 relationList = relation.hide;
             }
-            let guiKey: number;
+            let guiKey: string;
             for (let index = 0; index < relationList.show.length; index++) {
                 guiKey = relationList.show[index];
                 this.__open(guiKey);
@@ -225,7 +225,7 @@ export class GUIManagerImpl implements IGUIManager {
     /**
      * 获得前一个打开的全屏界面
      */
-    getPrevLayer(): number {
+    getPrevLayer(): string {
         let layers: ILayer[] = LayerManager.getAllLayer();
         for (let i = 0, len = layers.length; i < len; i += 1) {
             if ((layers[i] as Layer).isFullScrene) {
@@ -235,15 +235,14 @@ export class GUIManagerImpl implements IGUIManager {
                 break;
             }
         }
-
-        return -1;
+        return undefined;
     }
 
     /**
      * 获取界面状态
      * @param key 
      */
-    getGUIState(key: number): GUIState {
+    getGUIState(key: string): GUIState {
         if (!this.__registered.has(key)) {
             throw new Error("GUI:" + key + "未注册！")
         }
@@ -255,7 +254,7 @@ export class GUIManagerImpl implements IGUIManager {
         return proxy.info.state;
     }
 
-    setGUIState(key: number, state: GUIState): void {
+    setGUIState(key: string, state: GUIState): void {
         if (!this.__registered.has(key)) {
             throw new Error("GUI:" + key + "未注册！")
         }
@@ -268,7 +267,7 @@ export class GUIManagerImpl implements IGUIManager {
      * @param key 
      * @returns 
      */
-    isOpen(key: number): boolean {
+    isOpen(key: string): boolean {
         let state: GUIState = this.getGUIState(key);
         if (state == GUIState.Showing || state == GUIState.Showed) {
             return true;

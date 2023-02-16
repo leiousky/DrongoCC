@@ -7,9 +7,9 @@ export interface IRelationList {
     /**
      * 要显示的UI列表
      */
-    show: Array<number>;
+    show: Array<string>;
     /**
      * 要隐藏的UI列表
      */
-    hide: Array<number>;
+    hide: Array<string>;
 }

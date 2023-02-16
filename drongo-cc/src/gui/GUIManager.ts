@@ -22,7 +22,7 @@ export class GUIManager {
      * @param info 
      * @returns 
      */
-    static register(info: { key: number }): void {
+    static register(info: { key: string }): void {
         return this.impl.register(info);
     }
 
@@ -31,11 +31,11 @@ export class GUIManager {
      * @param key 
      * @returns 
      */
-    static unregister(key: number): void {
+    static unregister(key: string): void {
         return this.impl.unregister(key);
     }
 
-    static open(key:number,data?:any):void{
+    static open(key:string,data?:any):void{
         this.impl.open(key,data);
     }
 
@@ -44,7 +44,7 @@ export class GUIManager {
      * @param key 
      * @param checkLayer 是否检查全屏记录
      */
-    static close(key:number,checkLayer:boolean=true):void{
+    static close(key:string,checkLayer:boolean=true):void{
         this.impl.close(key,checkLayer);
     }
 
@@ -57,7 +57,7 @@ export class GUIManager {
      * @param key 
      * @returns  0 未显示  1显示中
      */
-    static getGUIState(key: number): GUIState {
+    static getGUIState(key: string): GUIState {
         return this.impl.getGUIState(key);
     }
 
@@ -66,7 +66,7 @@ export class GUIManager {
      * @param key 
      * @returns 
      */
-    static isOpen(key:number):boolean{
+    static isOpen(key:string):boolean{
         return this.impl.isOpen(key);
     }
 
@@ -75,14 +75,14 @@ export class GUIManager {
      * @param key    界面全局唯一KEY
      * @param path   组件名称/路径
      */
-    static getUIComponent(key:number,path:string):any{
+    static getUIComponent(key:string,path:string):any{
         return this.impl.getUIComponent(key,path);
     }
 
     /**
      * 获取界面的mediator
      */
-    static getMediatorByKey(key:number):IGUIMediator{
+    static getMediatorByKey(key:string):IGUIMediator{
         return this.impl.getMediatorByKey(key);
     }
 
@@ -90,7 +90,7 @@ export class GUIManager {
      * 获得前一个打开的全屏界面
      * @param curLayerKey 当前打开的全屏界面 
      */
-    static getPrevLayer():number{
+    static getPrevLayer():string{
         return this.impl.getPrevLayer();
     }
 
