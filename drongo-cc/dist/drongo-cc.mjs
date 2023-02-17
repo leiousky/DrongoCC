@@ -6101,9 +6101,6 @@ class ConfigManagerImpl {
      * @param accessors
      */
     register(sheet, accessors) {
-        if (!this.__accessors.has(sheet)) {
-            throw new Error("配置表：" + sheet + "未注册存取器！");
-        }
         this.__accessors.set(sheet, accessors);
     }
     /**
