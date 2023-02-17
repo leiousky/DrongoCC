@@ -5883,6 +5883,7 @@ var serviceManager = new ServiceManager();
  */
 class BaseConfigAccessor {
     constructor() {
+        this.__configs = [];
     }
     save(value) {
         const index = this.__configs.indexOf(value);

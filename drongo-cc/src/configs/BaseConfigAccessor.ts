@@ -7,7 +7,7 @@ import { IConfigAccessor } from "./core/IConfigAccessor";
  */
 export class BaseConfigAccessor implements IConfigAccessor {
 
-    private __configs: Array<any>;
+    private __configs: Array<any> = [];
 
     constructor() {
 
