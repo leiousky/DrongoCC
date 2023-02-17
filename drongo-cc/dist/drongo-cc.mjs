@@ -5885,7 +5885,8 @@ class BaseConfigAccessor {
     constructor() {
     }
     save(value) {
-        if (this.__configs.includes(value)) {
+        const index = this.__configs.indexOf(value);
+        if (index >= 0) {
             return false;
         }
         this.__configs.push(value);

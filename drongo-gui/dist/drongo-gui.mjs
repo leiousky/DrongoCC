@@ -1,5 +1,5 @@
 import { Resource, key2URL, url2Key, ResManager, BindingUtils, Timer, Res, LoadingView, serviceManager, GUIManager, Event, LayerManager, TickerManager, GUIState, RelationManager, Injector } from 'drongo-cc';
-import { UIPackage, GComponent, GRoot, AsyncOperation, GGraph } from 'drongo-fgui';
+import { UIPackage, GComponent, AsyncOperation, GGraph, GRoot } from 'drongo-fgui';
 import { assetManager, Color, Node } from 'cc';
 
 class FGUIResource extends Resource {
@@ -76,56 +76,6 @@ class Layer extends GComponent {
     }
     getCount() {
         return this.numChildren;
-    }
-}
-
-/**
- * cocos fgui 层管理器
- */
-class LayerManagerImpl {
-    constructor() {
-        this.__layerMap = new Map();
-    }
-    /**
-     * 添加层
-     * @param key
-     * @param layer
-     */
-    addLayer(key, layer) {
-        if (layer instanceof Layer) {
-            GRoot.inst.addChild(layer);
-            this.__layerMap.set(key, layer);
-        }
-        else {
-            throw new Error("层必须是Layer");
-        }
-    }
-    /**
-     * 删除层
-     * @param key
-     */
-    removeLayer(key) {
-        let layer = this.__layerMap.get(key);
-        if (layer) {
-            GRoot.inst.removeChild(layer);
-            this.__layerMap.delete(key);
-        }
-        else {
-            throw new Error("找不到要删除的层：" + key);
-        }
-    }
-    getLayer(layerKey) {
-        return this.__layerMap.get(layerKey);
-    }
-    /**
-     * 获得所有层
-     */
-    getAllLayer() {
-        let _values = [];
-        this.__layerMap.forEach(function (v, key) {
-            _values.push(v);
-        });
-        return _values;
     }
 }
 
@@ -541,6 +491,156 @@ class GUIProxy {
 GUIProxy.createNode = new Node("createHelpNode");
 
 /**
+ * UI中介者
+ */
+class GUIMediator extends BaseMediator {
+    constructor() {
+        super();
+        this.info = null;
+        /**根节点 */
+        this.viewComponent = null;
+        /**遮罩 */
+        this.__mask = null;
+    }
+    /**
+     * 创建UI
+     * @param info
+     * @param created
+     */
+    createUI(info, created) {
+        this.info = info;
+        if (this.info == null) {
+            throw new Error("GUI 信息不能为空");
+        }
+        this.__createdCallBack = created;
+        this.__createUI(true);
+    }
+    __createUI(async) {
+        let packageName = this.info.packageName;
+        if (async) {
+            this.__asyncCreator = new AsyncOperation();
+            this.__asyncCreator.callback = this.__uiCreated.bind(this);
+            this.__asyncCreator.createObject(packageName, this.info.comName);
+        }
+        else {
+            try {
+                let ui = UIPackage.createObject(packageName, this.info.comName);
+                this.__uiCreated(ui);
+            }
+            catch (err) {
+                throw new Error("创建界面失败：" + this.info.packageName + " " + this.info.comName);
+            }
+        }
+    }
+    __uiCreated(ui) {
+        let uiCom = ui.asCom;
+        uiCom.makeFullScreen();
+        //如果需要遮罩
+        if (this.info.modal) {
+            this.ui = uiCom;
+            this.viewComponent = new GComponent();
+            this.viewComponent.makeFullScreen();
+            this.__mask = new GGraph();
+            this.__mask.makeFullScreen();
+            this.__mask.drawRect(0, Color.BLACK, GUISettings.mask_color);
+            this.viewComponent.addChild(this.__mask);
+            if (this.info.modalClose) {
+                this.__mask.onClick(this._maskClickHandler, this);
+            }
+            this.viewComponent.addChild(this.ui);
+        }
+        else {
+            this.ui = this.viewComponent = uiCom;
+        }
+        this.ui.name = this.info.key;
+        if (this.__createdCallBack) {
+            this.__createdCallBack();
+            this.__createdCallBack = null;
+        }
+    }
+    _maskClickHandler() {
+        GUIManager.close(this.info.key);
+    }
+    init() {
+    }
+    show(data) {
+        super.show(data);
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.show(data);
+            }
+        }
+    }
+    showedUpdate(data) {
+        super.showedUpdate(data);
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.showedUpdate(data);
+            }
+        }
+    }
+    hide() {
+        super.hide();
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.hide();
+            }
+        }
+    }
+    /**
+     * 关闭
+     * @param checkLayer 是否检查全屏层记录
+     */
+    close(checkLayer = true) {
+        GUIManager.close(this.info.key, checkLayer);
+    }
+    tick(dt) {
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.tick(dt);
+            }
+        }
+    }
+    destroy() {
+        if (this.__mask) {
+            this.__mask.offClick(this._maskClickHandler, this);
+            this.__mask.dispose();
+            this.__mask = null;
+        }
+        this.viewComponent.dispose();
+        this.info = null;
+        if (this.$subMediators) {
+            for (let index = 0; index < this.$subMediators.length; index++) {
+                const element = this.$subMediators[index];
+                element.destroy();
+            }
+        }
+    }
+}
+
+/**
+ * 子UI 逻辑划分
+ */
+class SubGUIMediator extends BaseMediator {
+    constructor(ui, owner) {
+        super();
+        this.ui = ui;
+        this.owner = owner;
+        this.init();
+        this.inited = true;
+    }
+    destroy() {
+        super.destroy();
+        this.owner = null;
+        this.ui = null;
+    }
+}
+
+/**
  * GUI管理器
  */
 class GUIManagerImpl {
@@ -791,152 +891,52 @@ class GUIManagerImpl {
 }
 
 /**
- * UI中介者
+ * cocos fgui 层管理器
  */
-class GUIMediator extends BaseMediator {
+class LayerManagerImpl {
     constructor() {
-        super();
-        this.info = null;
-        /**根节点 */
-        this.viewComponent = null;
-        /**遮罩 */
-        this.__mask = null;
+        this.__layerMap = new Map();
     }
     /**
-     * 创建UI
-     * @param info
-     * @param created
+     * 添加层
+     * @param key
+     * @param layer
      */
-    createUI(info, created) {
-        this.info = info;
-        if (this.info == null) {
-            throw new Error("GUI 信息不能为空");
-        }
-        this.__createdCallBack = created;
-        this.__createUI(true);
-    }
-    __createUI(async) {
-        let packageName = this.info.packageName;
-        if (async) {
-            this.__asyncCreator = new AsyncOperation();
-            this.__asyncCreator.callback = this.__uiCreated.bind(this);
-            this.__asyncCreator.createObject(packageName, this.info.comName);
+    addLayer(key, layer) {
+        if (layer instanceof Layer) {
+            GRoot.inst.addChild(layer);
+            this.__layerMap.set(key, layer);
         }
         else {
-            try {
-                let ui = UIPackage.createObject(packageName, this.info.comName);
-                this.__uiCreated(ui);
-            }
-            catch (err) {
-                throw new Error("创建界面失败：" + this.info.packageName + " " + this.info.comName);
-            }
-        }
-    }
-    __uiCreated(ui) {
-        let uiCom = ui.asCom;
-        uiCom.makeFullScreen();
-        //如果需要遮罩
-        if (this.info.modal) {
-            this.ui = uiCom;
-            this.viewComponent = new GComponent();
-            this.viewComponent.makeFullScreen();
-            this.__mask = new GGraph();
-            this.__mask.makeFullScreen();
-            this.__mask.drawRect(0, Color.BLACK, GUISettings.mask_color);
-            this.viewComponent.addChild(this.__mask);
-            if (this.info.modalClose) {
-                this.__mask.onClick(this._maskClickHandler, this);
-            }
-            this.viewComponent.addChild(this.ui);
-        }
-        else {
-            this.ui = this.viewComponent = uiCom;
-        }
-        this.ui.name = this.info.key;
-        if (this.__createdCallBack) {
-            this.__createdCallBack();
-            this.__createdCallBack = null;
-        }
-    }
-    _maskClickHandler() {
-        GUIManager.close(this.info.key);
-    }
-    init() {
-    }
-    show(data) {
-        super.show(data);
-        if (this.$subMediators) {
-            for (let index = 0; index < this.$subMediators.length; index++) {
-                const element = this.$subMediators[index];
-                element.show(data);
-            }
-        }
-    }
-    showedUpdate(data) {
-        super.showedUpdate(data);
-        if (this.$subMediators) {
-            for (let index = 0; index < this.$subMediators.length; index++) {
-                const element = this.$subMediators[index];
-                element.showedUpdate(data);
-            }
-        }
-    }
-    hide() {
-        super.hide();
-        if (this.$subMediators) {
-            for (let index = 0; index < this.$subMediators.length; index++) {
-                const element = this.$subMediators[index];
-                element.hide();
-            }
+            throw new Error("层必须是Layer");
         }
     }
     /**
-     * 关闭
-     * @param checkLayer 是否检查全屏层记录
+     * 删除层
+     * @param key
      */
-    close(checkLayer = true) {
-        GUIManager.close(this.info.key, checkLayer);
-    }
-    tick(dt) {
-        if (this.$subMediators) {
-            for (let index = 0; index < this.$subMediators.length; index++) {
-                const element = this.$subMediators[index];
-                element.tick(dt);
-            }
+    removeLayer(key) {
+        let layer = this.__layerMap.get(key);
+        if (layer) {
+            GRoot.inst.removeChild(layer);
+            this.__layerMap.delete(key);
+        }
+        else {
+            throw new Error("找不到要删除的层：" + key);
         }
     }
-    destroy() {
-        if (this.__mask) {
-            this.__mask.offClick(this._maskClickHandler, this);
-            this.__mask.dispose();
-            this.__mask = null;
-        }
-        this.viewComponent.dispose();
-        this.info = null;
-        if (this.$subMediators) {
-            for (let index = 0; index < this.$subMediators.length; index++) {
-                const element = this.$subMediators[index];
-                element.destroy();
-            }
-        }
+    getLayer(layerKey) {
+        return this.__layerMap.get(layerKey);
     }
-}
-
-/**
- * 子UI 逻辑划分
- */
-class SubGUIMediator extends BaseMediator {
-    constructor(ui, owner) {
-        super();
-        this.ui = ui;
-        this.owner = owner;
-        this.init();
-        this.inited = true;
-    }
-    destroy() {
-        super.destroy();
-        this.owner = null;
-        this.ui = null;
+    /**
+     * 获得所有层
+     */
+    getAllLayer() {
+        let _values = [];
+        this.__layerMap.forEach(function (v, key) {
+            _values.push(v);
+        });
+        return _values;
     }
 }
 
@@ -959,7 +959,7 @@ class Drongo {
                     LayerManager.addLayer(layerKey, new Layer(layerKey));
                 }
                 else {
-                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.includes(layerKey)));
+                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.indexOf(layerKey) >= 0));
                 }
             }
         }
@@ -977,4 +977,4 @@ class Drongo {
     }
 }
 
-export { BaseMediator, Drongo, FGUIResource, GUIManagerImpl, GUIMediator, GUIProxy, GUISettings, Layer, LayerManagerImpl, SubGUIMediator, fguiResLoader };
+export { BaseMediator, Drongo, FGUIResource, GUIMediator, GUIProxy, GUISettings, Layer, SubGUIMediator, fguiResLoader };

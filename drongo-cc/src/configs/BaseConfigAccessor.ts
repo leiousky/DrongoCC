@@ -12,9 +12,10 @@ export class BaseConfigAccessor implements IConfigAccessor {
     constructor() {
 
     }
-    
+
     save(value: any): boolean {
-        if(this.__configs.includes(value)){
+        const index = this.__configs.indexOf(value);
+        if (index >= 0) {
             return false;
         }
         this.__configs.push(value);

@@ -18,7 +18,7 @@ export class Drongo {
         Res.setResLoader("fgui", fguiResLoader);
         Injector.inject(GUIManager.KEY, GUIManagerImpl);
         Injector.inject(LayerManager.KEY, LayerManagerImpl);
-        
+
         //创建层级
         if (layers && layers.length > 0) {
             for (let index = 0; index < layers.length; index++) {
@@ -26,7 +26,7 @@ export class Drongo {
                 if (fullScrene) {
                     LayerManager.addLayer(layerKey, new Layer(layerKey))
                 } else {
-                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.includes(layerKey)));
+                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.indexOf(layerKey) >= 0));
                 }
             }
         }

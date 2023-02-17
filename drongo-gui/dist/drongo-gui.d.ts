@@ -8,11 +8,9 @@ declare module 'drongo-gui' {
     export { fguiResLoader } from "drongo-gui/res/FGUILoader";
     export { FGUIResource } from "drongo-gui/res/FGUIResource";
     export { Layer } from "drongo-gui/layer/Layer";
-    export { LayerManagerImpl } from "drongo-gui/layer/LayerManagerImpl";
     export { GUISettings } from "drongo-gui/gui/GUISettings";
     export { IGUIInfo } from "drongo-gui/gui/IGUIInfo";
     export { BaseMediator } from "drongo-gui/gui/BaseMediator";
-    export { GUIManagerImpl } from "drongo-gui/gui/GUIManagerImpl";
     export { GUIProxy } from "drongo-gui/gui/GUIProxy";
     export { GUIMediator } from "drongo-gui/gui/GUIMediator";
     export { SubGUIMediator } from "drongo-gui/gui/SubGUIMediator";
@@ -52,32 +50,6 @@ declare module 'drongo-gui/layer/Layer' {
         openRecord: Array<string>;
         constructor(name: string, isFullScrene?: boolean);
         getCount(): number;
-    }
-}
-
-declare module 'drongo-gui/layer/LayerManagerImpl' {
-    import { ILayer, ILayerManager } from "drongo-cc";
-    /**
-        * cocos fgui 层管理器
-        */
-    export class LayerManagerImpl implements ILayerManager {
-            constructor();
-            /**
-                * 添加层
-                * @param key
-                * @param layer
-                */
-            addLayer(key: string, layer: ILayer): void;
-            /**
-                * 删除层
-                * @param key
-                */
-            removeLayer(key: string): void;
-            getLayer(layerKey: string): ILayer | undefined;
-            /**
-                * 获得所有层
-                */
-            getAllLayer(): ILayer[];
     }
 }
 
@@ -226,46 +198,6 @@ declare module 'drongo-gui/gui/BaseMediator' {
                 * 删除已绑定事件
                 */
             _removeBindedEvents(): void;
-    }
-}
-
-declare module 'drongo-gui/gui/GUIManagerImpl' {
-    import { GUIState, IGUIManager, IGUIMediator } from "drongo-cc";
-    import { IGUIInfo } from "drongo-gui/gui/IGUIInfo";
-    /**
-        * GUI管理器
-        */
-    export class GUIManagerImpl implements IGUIManager {
-            constructor();
-            /**获取某个组件 */
-            getUIComponent(key: string, path: string): any;
-            /**
-                * 获取界面的mediator
-                * @param key
-                */
-            getMediatorByKey(key: string): IGUIMediator | null;
-            register(info: IGUIInfo): void;
-            unregister(key: string): void;
-            tick(dt: number): void;
-            open(key: string, data?: any): void;
-            close(key: string, checkLayer?: boolean): void;
-            closeAll(): void;
-            /**
-                * 获得前一个打开的全屏界面
-                */
-            getPrevLayer(): string;
-            /**
-                * 获取界面状态
-                * @param key
-                */
-            getGUIState(key: string): GUIState;
-            setGUIState(key: string, state: GUIState): void;
-            /**
-                * 是否已打开或打开中
-                * @param key
-                * @returns
-                */
-            isOpen(key: string): boolean;
     }
 }
 
