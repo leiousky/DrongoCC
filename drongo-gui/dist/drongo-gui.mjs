@@ -956,10 +956,10 @@ class Drongo {
             for (let index = 0; index < layers.length; index++) {
                 const layerKey = layers[index];
                 if (fullScrene) {
-                    LayerManager.addLayer(layerKey, new Layer(layerKey));
+                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.indexOf(layerKey) >= 0));
                 }
                 else {
-                    LayerManager.addLayer(layerKey, new Layer(layerKey, fullScrene.indexOf(layerKey) >= 0));
+                    LayerManager.addLayer(layerKey, new Layer(layerKey));
                 }
             }
         }

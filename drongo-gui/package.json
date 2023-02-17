@@ -1,6 +1,6 @@
 {
   "name": "drongo-gui",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "ui lib",
   "main": "dist/drongo-gui.mjs",
   "types": "dist/drongo-gui.d.ts",
